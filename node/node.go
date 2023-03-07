@@ -12,8 +12,8 @@ type Node struct {
 	downloadBandwidth int // byte/s
 	uploadBandwidth   int
 
-	tsLastReceived int64 // the time(μs) when last packet was received
-	tsLastSend     int64 // the time(μs) when last packet was sent
+	TsLastReceived int64 // the time(μs) when last packet was received
+	TsLastSend     int64 // the time(μs) when last packet was sent
 
 	receivedPackets map[int]int64 // id -> delay
 }
@@ -82,4 +82,7 @@ func (n *Node) Received(msgId int, timestamp int64) bool {
 		n.receivedPackets[msgId] = timestamp
 	}
 	return ok
+}
+func (n *Node) NumReceivedPackets() int {
+	return len(n.receivedPackets)
 }

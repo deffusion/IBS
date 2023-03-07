@@ -3,7 +3,6 @@ package network
 import (
 	"IBS/node"
 	"IBS/node/routing"
-	"fmt"
 	"math/rand"
 )
 
@@ -70,9 +69,10 @@ func (net *Network) GenerateConnections(n int) {
 		connectCount := node.RoutingTableLength()
 		for connectCount < n {
 			r := rand.Intn(net.Size()) + 1
-			if net.Connect(node, net.nodes[r], NewFloodPeerInfo) == true {
-				connectCount++
-			}
+			//if net.Connect(node, net.nodes[r], NewFloodPeerInfo) == true {
+			net.Connect(node, net.nodes[r], NewFloodPeerInfo)
+			connectCount++
+			//}
 		}
 	}
 }
@@ -87,7 +87,7 @@ func (net *Network) Connect(a, b *node.Node, f func(*node.Node) routing.PeerInfo
 	if a.NoRoomForNewPeer() || b.NoRoomForNewPeer() {
 		return false
 	}
-	fmt.Printf("connect %d to %d\n", a.Id(), b.Id())
+	//fmt.Printf("connect %d to %d\n", a.Id(), b.Id())
 	a.AddPeer(f(b))
 	b.AddPeer(f(a))
 	return true
