@@ -5,31 +5,15 @@ import (
 	"fmt"
 )
 
-type FloodPeerInfo struct {
-	id int
-}
-
-func (i *FloodPeerInfo) PeerID() int {
-	return i.id
-}
-
-func (i *FloodPeerInfo) Score() int {
-	return 1
-}
-
-func NewFloodPeerInfo(id int) *FloodPeerInfo {
-	return &FloodPeerInfo{id}
-}
-
 type FloodTable struct {
 	// id:int
-	table map[int]PeerInfo
+	table map[uint64]PeerInfo
 	limit int
 }
 
 func NewFloodTable(limit int) *FloodTable {
 	return &FloodTable{
-		make(map[int]PeerInfo),
+		make(map[uint64]PeerInfo),
 		limit,
 	}
 }
@@ -56,17 +40,24 @@ func (t *FloodTable) AddPeer(peerInfo PeerInfo) error {
 	return nil
 }
 
-func (t *FloodTable) RemovePeer(id int) {
+func (t *FloodTable) RemovePeer(id uint64) {
 	delete(t.table, id)
 }
 
-func (t *FloodTable) PeersToBroadcast(from int) []int {
-	var peers []int
+func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
+	var peers []uint64
 	// broadcast to all peers except the sender
 	for id, _ := range t.table {
-		if id != from {
-			peers = append(peers, id)
+		if uint64(id) != from {
+			peers = append(peers, uint64(id))
 		}
 	}
 	return peers
+}
+
+func (t *FloodTable) SetLastSeen(id uint64, timestamp int64) {
+	t.table[id].SetLastSeen(timestamp)
+}
+func (t *FloodTable) PrintTable() {
+
 }

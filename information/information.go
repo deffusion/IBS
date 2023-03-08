@@ -35,6 +35,8 @@ type Packet struct {
 	queuingDelayReceiving int64
 	from                  *node.Node
 	to                    *node.Node
+	hop                   int
+	redundancy            bool
 }
 
 type Packets []*Packet
@@ -65,6 +67,8 @@ func NewPacket(id, dataSize int, from, to, originNode *node.Node, timestamp int6
 		0,
 		from,
 		to,
+		0,
+		false,
 	}
 }
 
@@ -72,6 +76,7 @@ func (p *Packet) NextPacket(to *node.Node, propagationDelay, transmissionDelay i
 	packet := *p
 	packet.from = p.to // the last receiver is the next sender
 	packet.to = to
+	packet.hop++
 	packet.propagationDelay = propagationDelay
 	packet.transmissionDelay = transmissionDelay
 	// receiving queue delay
@@ -89,9 +94,10 @@ func (p *Packet) NextPackets() *Packets {
 	receivedAt := p.timestamp
 	received := sender.Received(p.id, p.timestamp)
 	if received == true {
+		p.redundancy = true
 		return &packets
 	} else {
-		//fmt.Printf("%d->%d info=%d t=%d μs\n", p.from.Id(), sender.Id(), p.id, p.timestamp)
+		//fmt.Printf("%d->%d info=%d hop=%d t=%d μs\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp)
 	}
 	IDs := sender.PeersToBroadCast(p.from)
 	regionID := p.net.RegionId
@@ -137,4 +143,10 @@ func (p *Packet) From() *node.Node {
 }
 func (p *Packet) To() *node.Node {
 	return p.to
+}
+func (p *Packet) Redundancy() bool {
+	return p.redundancy
+}
+func (p *Packet) Hop() int {
+	return p.hop
 }

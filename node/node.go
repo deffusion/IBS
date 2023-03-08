@@ -6,7 +6,7 @@ import (
 )
 
 type Node struct {
-	id                int
+	id                uint64
 	region            string
 	routingTable      routing.Table
 	downloadBandwidth int // byte/s
@@ -16,9 +16,10 @@ type Node struct {
 	TsLastSend     int64 // the time(μs) when last packet was sent
 
 	receivedPackets map[int]int64 // id -> delay
+	running         bool
 }
 
-func NewNode(id, downloadBandwidth, uploadBandwidth int, region string, table routing.Table) *Node {
+func NewNode(id uint64, downloadBandwidth, uploadBandwidth int, region string, table routing.Table) *Node {
 	return &Node{
 		id,
 		region,
@@ -28,10 +29,11 @@ func NewNode(id, downloadBandwidth, uploadBandwidth int, region string, table ro
 		0,
 		0,
 		map[int]int64{},
+		true,
 	}
 }
 
-func (n *Node) Id() int {
+func (n *Node) Id() uint64 {
 	return n.id
 }
 func (n *Node) Region() string {
@@ -71,7 +73,7 @@ func (n *Node) AddPeer(peerInfo routing.PeerInfo) {
 }
 
 // return id of peers
-func (n *Node) PeersToBroadCast(from *Node) *[]int {
+func (n *Node) PeersToBroadCast(from *Node) *[]uint64 {
 	peerIDs := n.routingTable.PeersToBroadcast(from.id)
 	return &peerIDs
 }
@@ -85,4 +87,11 @@ func (n *Node) Received(msgId int, timestamp int64) bool {
 }
 func (n *Node) NumReceivedPackets() int {
 	return len(n.receivedPackets)
+}
+
+func (n *Node) Running() bool {
+	return n.running
+}
+func (n *Node) PrintTable() {
+	n.routingTable.PrintTable()
 }
