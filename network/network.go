@@ -18,7 +18,7 @@ type Network struct {
 	indexes        map[uint64]uint64
 	RegionId       map[string]int
 	Regions        []string
-	DelayOfRegions *[][]int64
+	DelayOfRegions *[][]int32
 }
 
 func NewNetwork() *Network {
@@ -28,7 +28,7 @@ func NewNetwork() *Network {
 		regionId[region] = i
 	}
 	// unit: μs (0.000,001s)
-	delayOfRegions := &[][]int64{
+	delayOfRegions := &[][]int32{
 		// unit: μs (0.000,001s)
 		{10_000, 200_000, 250_000},
 		{200_000, 3_000, 100_000},

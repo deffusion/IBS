@@ -29,10 +29,10 @@ func (i *Information) DataSize() int {
 type Packet struct {
 	*Information
 	timestamp             int64 // delay(μs) from the generation(timestamp) of information
-	propagationDelay      int64
-	transmissionDelay     int64
-	queuingDelaySending   int64
-	queuingDelayReceiving int64
+	propagationDelay      int32
+	transmissionDelay     int32
+	queuingDelaySending   int32
+	queuingDelayReceiving int32
 	from                  *node.Node
 	to                    *node.Node
 	hop                   int
@@ -72,7 +72,7 @@ func NewPacket(id, dataSize int, from, to, originNode *node.Node, timestamp int6
 	}
 }
 
-func (p *Packet) NextPacket(to *node.Node, propagationDelay, transmissionDelay int64) *Packet {
+func (p *Packet) NextPacket(to *node.Node, propagationDelay, transmissionDelay int32) *Packet {
 	packet := *p
 	packet.from = p.to // the last receiver is the next sender
 	packet.to = to
@@ -81,10 +81,10 @@ func (p *Packet) NextPacket(to *node.Node, propagationDelay, transmissionDelay i
 	packet.transmissionDelay = transmissionDelay
 	// receiving queue delay
 	if to.TsLastReceived > packet.timestamp {
-		packet.queuingDelayReceiving = packet.timestamp - to.TsLastReceived
+		packet.queuingDelayReceiving = int32(packet.timestamp - to.TsLastReceived)
 	}
 	// sending queuing delay will be considered later
-	packet.timestamp = packet.timestamp + propagationDelay + transmissionDelay + packet.queuingDelayReceiving
+	packet.timestamp = packet.timestamp + int64(propagationDelay+transmissionDelay+packet.queuingDelayReceiving)
 	//to.TsLastReceived = packet.timestamp
 	return &packet
 }
@@ -110,21 +110,21 @@ func (p *Packet) NextPackets() *Packets {
 			bandwidth = to.DownloadBandwidth()
 		}
 		transmissionDelay := p.dataSize * 1_000_000 / bandwidth // μs
-		packet := p.NextPacket(to, propagationDelay, int64(transmissionDelay))
+		packet := p.NextPacket(to, propagationDelay, int32(transmissionDelay))
 		packets = append(packets, packet)
 	}
 	// add sending queuing delay for each packet
 	// sending the packet that is earliest to be received first
 	sort.Sort(packets)
-	base := int64(0)
+	base := int32(0)
 	for i, packet := range packets {
 		if i == 0 {
 			if sender.TsLastSend > receivedAt {
-				base = sender.TsLastSend - receivedAt
+				base = int32(sender.TsLastSend - receivedAt)
 			}
 		}
 		packet.queuingDelaySending = base
-		packet.timestamp += (packet.queuingDelaySending - packet.queuingDelayReceiving)
+		packet.timestamp += int64(packet.queuingDelaySending - packet.queuingDelayReceiving)
 		base += packet.transmissionDelay
 	}
 

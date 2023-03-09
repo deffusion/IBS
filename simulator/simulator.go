@@ -10,8 +10,9 @@ import (
 )
 
 const NetSize = 10000
+const RecordUnit = 1000
 const MaxDegree = 20
-const NMessage = 300
+const NMessage = 100
 const K = 3
 
 //func NewBasicPeerInfo(n *node.Node) routing.PeerInfo {
@@ -44,10 +45,11 @@ func main() {
 	net := network.NewNetwork()
 	msgGenerator := node.NewNode(0, 0, 0, "", nil)
 	// 2<<20 = 1M (Byte/s)
-	//net.GenerateNodes(NetSize, NewFloodNode)
-	//net.InitFloodConnections(MaxDegree)
-	net.GenerateNodes(NetSize, NewKadcastNode)
-	net.InitKademliaConnections()
+	net.GenerateNodes(NetSize, NewFloodNode)
+	net.InitFloodConnections(MaxDegree)
+	//net.GenerateNodes(NetSize, NewKadcastNode)
+	//net.InitKademliaConnections()
+
 	//id := net.NodeID(uint64(103))
 	//net.Node(id).PrintTable()
 	//return
@@ -66,14 +68,19 @@ func main() {
 	//var x Sayer
 	//p := information.NewPacket(1, 1024, msgGenerator, node1, node1, 0, net)
 
-	sorter := NewInfoSorter()
+	var progress []*PacketStatistic
 
-	for i := 1; i <= NMessage; i++ {
-		id := net.NodeID(uint64(i))
-		sorter.Append(information.NewPacket(i, 1<<7, msgGenerator, net.Node(id), net.Node(id), 0, net))
+	sorter := NewInfoSorter()
+	for i := 0; i < NMessage; i++ {
+		id := net.NodeID(uint64(i + 1))
+		m := information.NewPacket(i, 1<<10, msgGenerator, net.Node(id), net.Node(id), int64(20*i), net)
+		ps := NewPacketStatistic()
+		ps.Timestamps[0] = m.InfoTimestamp()
+		progress = append(progress, ps)
+		sorter.Append(m)
 	}
 
-	t := Run(sorter)
+	t := Run(sorter, progress)
 	cnt := 0
 	regionCount := map[string]int{}
 	for i := 1; i <= NetSize; i++ {
@@ -92,10 +99,8 @@ func main() {
 	fmt.Println(regionCount)
 }
 
-func Run(sorter *PacketSorter) int64 {
+func Run(sorter *PacketSorter, progress []*PacketStatistic) int64 {
 	t := int64(0)
-	hop := 0
-	coveredNodes := 0
 	tFinish := int64(0)
 	n := 0 // num of packets were broadcast
 	for sorter.Length() > 0 {
@@ -107,24 +112,27 @@ func Run(sorter *PacketSorter) int64 {
 		//	fmt.Println(n)
 		//}
 		if p.Redundancy() == false {
-			coveredNodes++
+			ps := progress[p.ID()]
+			ps.Received++
+			if ps.Received%RecordUnit == 0 {
+				ps.Timestamps[ps.Received] = p.Timestamp()
+			}
 			t = p.Timestamp()
-			if p.Hop() > hop {
-				hop = p.Hop()
+			if ps.MaxHop < p.Hop() {
+				ps.MaxHop = p.Hop()
 			}
 
 		}
 		tFinish = p.Timestamp()
-		//if len(*packets) > 0 {
-		//	t = p.Timestamp()
-		//} else {
-		//	tFinish = p.Timestamp()
-		//}
 		for _, packet := range *packets {
 			sorter.Append(packet)
 		}
 	}
 	fmt.Printf("stopped at %d(μs), %d packets total\n", tFinish, n)
-	fmt.Println("max hop", hop)
+	fmt.Println("progress:")
+	for i, statistic := range progress {
+		fmt.Printf("packet %d start at %d delay=%d\n",
+			i, statistic.Timestamps[0], statistic.Delay())
+	}
 	return t
 }
