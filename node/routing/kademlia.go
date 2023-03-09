@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-const KeySpaceBits = 64
+const KeySpaceBits = 4
 
 type kademlia struct {
 	nodeID  uint64

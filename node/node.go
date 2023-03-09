@@ -12,8 +12,8 @@ type Node struct {
 	downloadBandwidth int // byte/s
 	uploadBandwidth   int
 
-	TsLastReceived int64 // the time(μs) when last packet was received
-	TsLastSend     int64 // the time(μs) when last packet was sent
+	//TsLastReceived int64 // the time(μs) when last packet was received
+	TsLastSending int64 // the time(μs) when last packet was sent
 
 	receivedPackets map[int]int64 // id -> delay
 	running         bool
@@ -26,7 +26,7 @@ func NewNode(id uint64, downloadBandwidth, uploadBandwidth int, region string, t
 		table,
 		downloadBandwidth,
 		uploadBandwidth,
-		0,
+		//0,
 		0,
 		map[int]int64{},
 		true,

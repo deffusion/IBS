@@ -4,16 +4,18 @@ import (
 	"IBS/information"
 	"IBS/network"
 	"IBS/node"
-	"IBS/node/hash"
 	"IBS/node/routing"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 )
 
-const NetSize = 10000
-const RecordUnit = 1000
-const MaxDegree = 20
-const NMessage = 100
-const K = 3
+const NetSize = 15
+const RecordUnit = 1
+const MaxDegree = 10
+const NMessage = 1000
+const K = 1
 
 //func NewBasicPeerInfo(n *node.Node) routing.PeerInfo {
 //	return routing.NewBasicPeerInfo(n.Id())
@@ -29,8 +31,8 @@ func NewFloodNode(id int64, downloadBandwidth, uploadBandwidth int, region strin
 }
 
 func NewKadcastNode(index int64, downloadBandwidth, uploadBandwidth int, region string) *node.Node {
-	nodeID := hash.Hash64(uint64(index))
-	//nodeID := uint64(index)
+	//nodeID := hash.Hash64(uint64(index))
+	nodeID := uint64(index)
 	return node.NewNode(
 		nodeID,
 		downloadBandwidth,
@@ -41,14 +43,13 @@ func NewKadcastNode(index int64, downloadBandwidth, uploadBandwidth int, region 
 }
 
 func main() {
-
 	net := network.NewNetwork()
 	msgGenerator := node.NewNode(0, 0, 0, "", nil)
 	// 2<<20 = 1M (Byte/s)
-	net.GenerateNodes(NetSize, NewFloodNode)
-	net.InitFloodConnections(MaxDegree)
-	//net.GenerateNodes(NetSize, NewKadcastNode)
-	//net.InitKademliaConnections()
+	//net.GenerateNodes(NetSize, NewFloodNode)
+	//net.InitFloodConnections(MaxDegree)
+	net.GenerateNodes(NetSize, NewKadcastNode)
+	net.InitKademliaConnections()
 
 	//id := net.NodeID(uint64(103))
 	//net.Node(id).PrintTable()
@@ -72,8 +73,8 @@ func main() {
 
 	sorter := NewInfoSorter()
 	for i := 0; i < NMessage; i++ {
-		id := net.NodeID(uint64(i + 1))
-		m := information.NewPacket(i, 1<<10, msgGenerator, net.Node(id), net.Node(id), int64(20*i), net)
+		id := net.NodeID(uint64(i%NetSize + 1))
+		m := information.NewPacket(i, 1<<7, msgGenerator, net.Node(id), net.Node(id), int64(20*i), net)
 		ps := NewPacketStatistic()
 		ps.Timestamps[0] = m.InfoTimestamp()
 		progress = append(progress, ps)
@@ -103,8 +104,10 @@ func Run(sorter *PacketSorter, progress []*PacketStatistic) int64 {
 	t := int64(0)
 	tFinish := int64(0)
 	n := 0 // num of packets were broadcast
+	var outputs []OutputPacket
 	for sorter.Length() > 0 {
 		p, _ := sorter.Take()
+		outputs = append(outputs, *NewOutputPacket(p))
 		//p.Print()
 		packets := p.NextPackets()
 		n++
@@ -128,11 +131,26 @@ func Run(sorter *PacketSorter, progress []*PacketStatistic) int64 {
 			sorter.Append(packet)
 		}
 	}
+	writePackets(&outputs)
 	fmt.Printf("stopped at %d(μs), %d packets total\n", tFinish, n)
 	fmt.Println("progress:")
 	for i, statistic := range progress {
 		fmt.Printf("packet %d start at %d delay=%d\n",
 			i, statistic.Timestamps[0], statistic.Delay())
 	}
+
 	return t
+}
+
+func writePackets(p *[]OutputPacket) {
+	b, err := json.Marshal(*p)
+	if err != nil {
+		fmt.Println(err)
+	}
+	//fmt.Println(string(b))
+	os.Create("packets.json")
+	err = ioutil.WriteFile("packets.json", b, 0777)
+	if err != nil {
+		fmt.Println(err)
+	}
 }

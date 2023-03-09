@@ -28,15 +28,15 @@ func (i *Information) DataSize() int {
 
 type Packet struct {
 	*Information
-	timestamp             int64 // delay(μs) from the generation(timestamp) of information
-	propagationDelay      int32
-	transmissionDelay     int32
-	queuingDelaySending   int32
-	queuingDelayReceiving int32
-	from                  *node.Node
-	to                    *node.Node
-	hop                   int
-	redundancy            bool
+	timestamp           int64 // delay(μs) from the generation(timestamp) of information
+	propagationDelay    int32
+	transmissionDelay   int32
+	queuingDelaySending int32
+	//queuingDelayReceiving int32
+	from       *node.Node
+	to         *node.Node
+	hop        int
+	redundancy bool
 }
 
 type Packets []*Packet
@@ -53,15 +53,14 @@ func (ps Packets) Less(i, j int) bool {
 
 func (p *Packet) Print() {
 	fmt.Printf(
-		"pacekt: %d %d->%d originNode: %d size: %dB timestamp: %d propagationDelay: %d transmissionDelay: %d queuingDelaySending: %d queuingDelayReceiving: %d\n",
-		p.id, p.from.Id(), p.to.Id(), p.originNode.Id(), p.dataSize, p.timestamp, p.propagationDelay, p.transmissionDelay, p.queuingDelaySending, p.queuingDelayReceiving)
+		"pacekt: %d %d->%d originNode: %d size: %dB timestamp: %d propagationDelay: %d transmissionDelay: %d queuingDelaySending: %d\n",
+		p.id, p.from.Id(), p.to.Id(), p.originNode.Id(), p.dataSize, p.timestamp, p.propagationDelay, p.transmissionDelay, p.queuingDelaySending)
 }
 
 func NewPacket(id, dataSize int, from, to, originNode *node.Node, timestamp int64, net *network.Network) *Packet {
 	return &Packet{
 		&Information{id, timestamp, originNode, dataSize, net},
 		timestamp,
-		0,
 		0,
 		0,
 		0,
@@ -79,13 +78,15 @@ func (p *Packet) NextPacket(to *node.Node, propagationDelay, transmissionDelay i
 	packet.hop++
 	packet.propagationDelay = propagationDelay
 	packet.transmissionDelay = transmissionDelay
+	packet.queuingDelaySending = 0
+	packet.timestamp += int64(propagationDelay + transmissionDelay)
 	// receiving queue delay
-	if to.TsLastReceived > packet.timestamp {
-		packet.queuingDelayReceiving = int32(packet.timestamp - to.TsLastReceived)
-	}
+	//if to.TsLastReceived > packet.timestamp {
+	//	packet.queuingDelayReceiving = int32(to.TsLastReceived - packet.timestamp)
+	//	fmt.Printf("%d->%d(TsLastReceived at %d) queuingDelayReceiving=%d\n",
+	//		packet.from.Id(), packet.to.Id(), to.TsLastReceived, packet.queuingDelayReceiving)
+	//}
 	// sending queuing delay will be considered later
-	packet.timestamp = packet.timestamp + int64(propagationDelay+transmissionDelay+packet.queuingDelayReceiving)
-	//to.TsLastReceived = packet.timestamp
 	return &packet
 }
 func (p *Packet) NextPackets() *Packets {
@@ -96,9 +97,9 @@ func (p *Packet) NextPackets() *Packets {
 	if received == true {
 		p.redundancy = true
 		return &packets
-	} else {
-		//fmt.Printf("%d->%d info=%d hop=%d t=%d μs\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp)
 	}
+
+	//fmt.Printf("%d->%d info=%d hop=%d t=%d μs\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp)
 	IDs := sender.PeersToBroadCast(p.from)
 	regionID := p.net.RegionId
 	for _, toID := range *IDs {
@@ -117,17 +118,16 @@ func (p *Packet) NextPackets() *Packets {
 	// sending the packet that is earliest to be received first
 	sort.Sort(packets)
 	base := int32(0)
-	for i, packet := range packets {
-		if i == 0 {
-			if sender.TsLastSend > receivedAt {
-				base = int32(sender.TsLastSend - receivedAt)
-			}
-		}
-		packet.queuingDelaySending = base
-		packet.timestamp += int64(packet.queuingDelaySending - packet.queuingDelayReceiving)
-		base += packet.transmissionDelay
+	if receivedAt < sender.TsLastSending {
+		base = int32(sender.TsLastSending - receivedAt)
 	}
-
+	for _, packet := range packets {
+		packet.queuingDelaySending = base
+		packet.timestamp += int64(base)
+		base += packet.transmissionDelay
+		//packet.to.TsLastReceived = packet.timestamp
+	}
+	sender.TsLastSending = receivedAt + int64(base)
 	return &packets
 }
 
@@ -138,6 +138,19 @@ func (p *Packet) InfoTimestamp() int64 {
 func (p *Packet) Timestamp() int64 {
 	return p.timestamp
 }
+func (p *Packet) PropagationDelay() int32 {
+	return p.propagationDelay
+}
+func (p *Packet) TransmissionDelay() int32 {
+	return p.transmissionDelay
+}
+func (p *Packet) QueuingDelaySending() int32 {
+	return p.queuingDelaySending
+}
+
+//func (p *Packet) QueuingDelayReceiving() int32 {
+//	return p.queuingDelayReceiving
+//}
 func (p *Packet) From() *node.Node {
 	return p.from
 }
