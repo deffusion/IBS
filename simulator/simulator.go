@@ -3,8 +3,6 @@ package main
 import (
 	"IBS/information"
 	"IBS/network"
-	"IBS/node"
-	"IBS/node/routing"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,43 +11,23 @@ import (
 
 const NetSize = 15
 const RecordUnit = 1
-const MaxDegree = 10
-const NMessage = 1000
-const K = 1
+const NMessage = 100
 
 //func NewBasicPeerInfo(n *node.Node) routing.PeerInfo {
 //	return routing.NewBasicPeerInfo(n.Id())
 //}
-func NewFloodNode(id int64, downloadBandwidth, uploadBandwidth int, region string) *node.Node {
-	return node.NewNode(
-		uint64(id),
-		downloadBandwidth,
-		uploadBandwidth,
-		region,
-		routing.NewFloodTable(MaxDegree),
-	)
-}
-
-func NewKadcastNode(index int64, downloadBandwidth, uploadBandwidth int, region string) *node.Node {
-	//nodeID := hash.Hash64(uint64(index))
-	nodeID := uint64(index)
-	return node.NewNode(
-		nodeID,
-		downloadBandwidth,
-		uploadBandwidth,
-		region,
-		routing.NewKadcastTable(nodeID, K),
-	)
-}
 
 func main() {
-	net := network.NewNetwork()
-	msgGenerator := node.NewNode(0, 0, 0, "", nil)
+	//msgGenerator := node.NewNode(0, 0, 0, "", nil)
 	// 2<<20 = 1M (Byte/s)
 	//net.GenerateNodes(NetSize, NewFloodNode)
 	//net.InitFloodConnections(MaxDegree)
-	net.GenerateNodes(NetSize, NewKadcastNode)
-	net.InitKademliaConnections()
+	//net := network.FloodNet{}
+
+	//net := network.NewFloodNet(NetSize)
+	net := network.NewKadcastNet(NetSize)
+	//net.GenerateNodes(NetSize, NewKadcastNode)
+	//net.InitKademliaConnections()
 
 	//id := net.NodeID(uint64(103))
 	//net.Node(id).PrintTable()
@@ -74,7 +52,7 @@ func main() {
 	sorter := NewInfoSorter()
 	for i := 0; i < NMessage; i++ {
 		id := net.NodeID(uint64(i%NetSize + 1))
-		m := information.NewPacket(i, 1<<7, msgGenerator, net.Node(id), net.Node(id), int64(20*i), net)
+		m := information.NewPacket(i, 1<<7, net.BootNode(), net.Node(id), net.Node(id), int64(20*i), net.Network)
 		ps := NewPacketStatistic()
 		ps.Timestamps[0] = m.InfoTimestamp()
 		progress = append(progress, ps)
@@ -134,10 +112,10 @@ func Run(sorter *PacketSorter, progress []*PacketStatistic) int64 {
 	writePackets(&outputs)
 	fmt.Printf("stopped at %d(μs), %d packets total\n", tFinish, n)
 	fmt.Println("progress:")
-	for i, statistic := range progress {
-		fmt.Printf("packet %d start at %d delay=%d\n",
-			i, statistic.Timestamps[0], statistic.Delay())
-	}
+	//for i, statistic := range progress {
+	//	fmt.Printf("packet %d start at %d delay=%d\n",
+	//		i, statistic.Timestamps[0], statistic.Delay())
+	//}
 
 	return t
 }

@@ -80,13 +80,6 @@ func (p *Packet) NextPacket(to *node.Node, propagationDelay, transmissionDelay i
 	packet.transmissionDelay = transmissionDelay
 	packet.queuingDelaySending = 0
 	packet.timestamp += int64(propagationDelay + transmissionDelay)
-	// receiving queue delay
-	//if to.TsLastReceived > packet.timestamp {
-	//	packet.queuingDelayReceiving = int32(to.TsLastReceived - packet.timestamp)
-	//	fmt.Printf("%d->%d(TsLastReceived at %d) queuingDelayReceiving=%d\n",
-	//		packet.from.Id(), packet.to.Id(), to.TsLastReceived, packet.queuingDelayReceiving)
-	//}
-	// sending queuing delay will be considered later
 	return &packet
 }
 func (p *Packet) NextPackets() *Packets {

@@ -1,9 +1,10 @@
 package network
 
 import (
+	"IBS/network/num_set"
 	"IBS/node"
 	"IBS/node/routing"
-	"math/rand"
+	"log"
 )
 
 const K = 2
@@ -22,6 +23,7 @@ func NewKadcastNode(index int64, downloadBandwidth, uploadBandwidth int, region 
 
 type KadcastNet struct {
 	*Network
+	idSet *num_set.Set
 }
 
 func NewKadcastNet(size int64) *KadcastNet {
@@ -31,29 +33,39 @@ func NewKadcastNet(size int64) *KadcastNet {
 	net.generateNodes(size, NewKadcastNode)
 	kNet := &KadcastNet{
 		net,
+		num_set.NewSet(),
 	}
 	kNet.initConnections()
 	return kNet
 }
 
 // Introduce : return n nodes
-func (kNet *KadcastNet) Introduce(n int) []*node.Node {
+func (kNet *KadcastNet) Introduce(id uint64, n int) []*node.Node {
 	var nodes []*node.Node
-	for i := 0; i < n; i++ {
-		r := rand.Intn(kNet.Size()) + 1 // zero is the msg generator
-		//fmt.Println("r", r)
-		nodes = append(nodes, kNet.Node(kNet.NodeID(uint64(r))))
+	for i := 0; i < routing.KeySpaceBits; i++ {
+		fakeID, err := routing.FakeIDForBucket(id, i)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ids := kNet.idSet.Around(fakeID, n)
+		for _, u := range ids {
+			nodes = append(nodes, kNet.Node(u))
+		}
+		//fmt.Println("introduce to:", id, "peerIDS:", ids)
 	}
 	return nodes
 }
 
 func (kNet *KadcastNet) initConnections() {
 	for _, node := range kNet.nodes {
-		//kNet.bootNode.AddPeer(NewBasicPeerInfo(node))
-		connectCount := node.RoutingTableLength()
-		peers := kNet.Introduce(MaxDegree - connectCount)
+		kNet.idSet.Insert(node.Id())
+		peers := kNet.Introduce(node.Id(), K)
 		for _, peer := range peers {
 			kNet.Connect(node, peer, NewBasicPeerInfo)
 		}
 	}
+	//for _, node := range kNet.nodes {
+	//	fmt.Println("id=", node.Id())
+	//	node.PrintTable()
+	//}
 }
