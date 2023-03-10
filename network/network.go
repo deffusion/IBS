@@ -6,6 +6,8 @@ import (
 	"math/rand"
 )
 
+const BootNodeID = 0
+
 func NewBasicPeerInfo(n *node.Node) routing.PeerInfo {
 	return routing.NewBasicPeerInfo(n.Id())
 }
@@ -14,6 +16,7 @@ func NewKadcastPeerInfo(n *node.Node) routing.PeerInfo {
 }
 
 type Network struct {
+	bootNode       *node.Node
 	nodes          map[uint64]*node.Node
 	indexes        map[uint64]uint64
 	RegionId       map[string]int
@@ -21,7 +24,7 @@ type Network struct {
 	DelayOfRegions *[][]int32
 }
 
-func NewNetwork() *Network {
+func NewNetwork(bootNode *node.Node) *Network {
 	regions := []string{"cn", "uk", "usa"}
 	regionId := make(map[string]int)
 	for i, region := range regions {
@@ -35,6 +38,7 @@ func NewNetwork() *Network {
 		{250_000, 100_000, 7_000},
 	}
 	return &Network{
+		bootNode,
 		map[uint64]*node.Node{},
 		map[uint64]uint64{},
 		regionId,
@@ -43,7 +47,7 @@ func NewNetwork() *Network {
 	}
 }
 
-func (net *Network) GenerateNodes(n int64, newNode func(int64, int, int, string) *node.Node) {
+func (net *Network) generateNodes(n int64, newNode func(int64, int, int, string) *node.Node) {
 	nodeDistribution := []float32{0.3, 0.1, 0.6}
 	uploadBandwidth := []int{1 << 19, 1 << 18, 1 << 17}
 	downloadBandwidth := []int{1 << 22, 1 << 21, 1 << 21}
@@ -57,7 +61,6 @@ func (net *Network) GenerateNodes(n int64, newNode func(int64, int, int, string)
 			}
 			acc += f
 		}
-		//net.indexes = append(net.indexes, hash.Hash64(uint64(i)))
 		net.Add(newNode(
 			i,
 			downloadBandwidth[regionIndex],
@@ -65,32 +68,17 @@ func (net *Network) GenerateNodes(n int64, newNode func(int64, int, int, string)
 			net.Regions[regionIndex],
 		), uint64(i))
 	}
-	//fmt.Println("indexes", net.indexes)
 }
 
-//n: at most n connection per node
-func (net *Network) InitFloodConnections(n int) {
-	for _, node := range net.nodes {
-		connectCount := node.RoutingTableLength()
-		for connectCount < n {
-			r := rand.Intn(net.Size()) + 1
-			//fmt.Println(r)
-			net.Connect(node, net.nodes[uint64(r)], NewBasicPeerInfo)
-			connectCount++
-		}
-	}
-}
-func (net *Network) InitKademliaConnections() {
-	for _, node := range net.nodes {
-		for _, peer := range net.nodes {
-			net.Connect(node, peer, NewKadcastPeerInfo)
-		}
-	}
+func (net *Network) BootNode() *node.Node {
+	return net.bootNode
 }
 
 func (net *Network) Node(id uint64) *node.Node {
 	return net.nodes[id]
 }
+
+// NodeID (index in the network ->nodeID)
 func (net *Network) NodeID(id uint64) uint64 {
 	return net.indexes[id]
 }
@@ -117,8 +105,3 @@ func (net *Network) Add(n *node.Node, i uint64) {
 func (net *Network) Size() int {
 	return len(net.indexes)
 }
-
-//type InfoSorter interface {
-//	Append(*information.Information)
-//	Take() *information.Information
-//}
