@@ -10,3 +10,7 @@ func TestLocate(t *testing.T) {
 		fmt.Printf("peer %d in bucket %d\n", i, locate(uint64(0), uint64(i)))
 	}
 }
+
+func TestFakeID(t *testing.T) {
+	fmt.Println(fakeIDForBucket(0, 63))
+}

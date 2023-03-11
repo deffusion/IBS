@@ -3,10 +3,12 @@ package routing
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
+	"time"
 )
 
-const KeySpaceBits = 4
+const KeySpaceBits = 64
 
 type kademlia struct {
 	nodeID  uint64
@@ -20,6 +22,27 @@ func NewKademlia(nodeID uint64, k int) *kademlia {
 		[KeySpaceBits]PeerInfos{},
 		k,
 	}
+}
+
+func fakeIDForBucket(num uint64, b int) uint64 {
+	var base uint64 = 1 << b
+	rand.Seed(time.Now().Unix())
+	if b == 63 {
+		// random 63bit positive number
+		r := uint64(rand.Int63n(62))<<1 + uint64(rand.Intn(2))
+		return num ^ (base + r)
+	}
+	return num ^ (uint64(rand.Int63n(int64(base))) + base)
+}
+
+func FakeIDForBucket(nodeID uint64, b int) (uint64, error) {
+	if b < 0 || b > 63 {
+		return nodeID, errors.New("FakeIDForBucket: out of range")
+	}
+	if b == 0 {
+		return nodeID ^ 1, nil
+	}
+	return fakeIDForBucket(nodeID, b), nil
 }
 
 func (k *kademlia) SetLastSeen(id uint64, timestamp int64) error {
@@ -69,5 +92,13 @@ func (k *kademlia) AddPeer(info PeerInfo) bool {
 }
 
 func (k *kademlia) PrintBuckets() {
-	fmt.Println(k.buckets)
+	for i, bucket := range k.buckets {
+		if len(bucket) > 0 {
+			fmt.Print("bucket", i, ": ")
+			for _, info := range bucket {
+				fmt.Printf("distance=%d(%d), ", info.PeerID()^k.nodeID, info.PeerID())
+			}
+			fmt.Println()
+		}
+	}
 }
