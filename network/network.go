@@ -139,3 +139,10 @@ func (net *Network) Add(n *node.Node, i int) {
 func (net *Network) Size() int {
 	return len(net.indexes)
 }
+
+func (net *Network) NodeCollapse(n int) {
+	for i := 1; i <= n; i++ {
+		id := net.NodeID(i)
+		net.Node(id).Stop()
+	}
+}

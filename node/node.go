@@ -95,3 +95,10 @@ func (n *Node) Running() bool {
 func (n *Node) PrintTable() {
 	n.routingTable.PrintTable()
 }
+
+func (n *Node) Run() {
+	n.running = true
+}
+func (n *Node) Stop() {
+	n.running = false
+}

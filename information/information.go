@@ -85,6 +85,9 @@ func (p *Packet) NextPacket(to *node.Node, propagationDelay, transmissionDelay i
 func (p *Packet) NextPackets() *Packets {
 	var packets Packets
 	sender := p.to
+	if sender.Running() == false {
+		return &packets
+	}
 	receivedAt := p.timestamp
 	received := sender.Received(p.id, p.timestamp)
 	if received == true {
@@ -97,6 +100,10 @@ func (p *Packet) NextPackets() *Packets {
 	regionID := p.net.RegionId
 	for _, toID := range *IDs {
 		to := p.net.Node(toID)
+		if to.Running() == false {
+			// TODO: remove the peer
+			continue
+		}
 		// p.to: sender of next packets
 		propagationDelay := (*p.net.DelayOfRegions)[regionID[sender.Region()]][regionID[to.Region()]]
 		bandwidth := sender.UploadBandwidth()

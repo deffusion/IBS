@@ -19,13 +19,22 @@ const NMessage = 1
 func main() {
 	net := network.NewFloodNet(NetSize)
 	//net := network.NewKadcastNet(NetSize)
+	net.NodeCollapse(NetSize / 10)
 
 	var progress []*PacketStatistic
 
 	sorter := NewInfoSorter()
+	offset := 0
 	for i := 0; i < NMessage; i++ {
 		id := net.NodeID(i%NetSize + 1)
-		m := information.NewPacket(i, 1<<7, net.BootNode(), net.Node(id), net.Node(id), int64(20*i), net.Network)
+		node := net.Node(id)
+		// avoid broadcasting from a node is not running
+		for node.Running() == false && offset < NetSize-NMessage {
+			offset++
+			id = net.NodeID((i+offset)%NetSize + 1)
+			node = net.Node(id)
+		}
+		m := information.NewPacket(i, 1<<7, net.BootNode(), node, node, int64(20*i), net.Network)
 		ps := NewPacketStatistic()
 		ps.Timestamps[0] = m.InfoTimestamp()
 		progress = append(progress, ps)
@@ -43,11 +52,9 @@ func main() {
 		regionCount[net.Node(id).Region()]++
 		if nPackets == NMessage {
 			cnt++
-		} else {
-			fmt.Printf("node%d received %d packets\n", i, nPackets)
 		}
 	}
-	fmt.Printf("%d nodes received %d packet in %d μs\n", cnt, NMessage, t)
+	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", cnt, NetSize, NMessage, t)
 	fmt.Println(regionCount)
 }
 
