@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-const MaxDegree = 4
+const MaxDegree = 15
 
 func NewFloodNode(id int64, downloadBandwidth, uploadBandwidth int, region string) *node.Node {
 	return node.NewNode(
@@ -22,7 +22,7 @@ type FloodNet struct {
 	*Network
 }
 
-func NewFloodNet(size int64) *FloodNet {
+func NewFloodNet(size int) *FloodNet {
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewNode(0, 0, 0, "", routing.NewFloodTable(MaxDegree))
 	net := NewNetwork(bootNode)
@@ -40,7 +40,7 @@ func (fNet *FloodNet) Introduce(n int) []*node.Node {
 	for i := 0; i < n; i++ {
 		r := rand.Intn(fNet.Size()) + 1 // zero is the msg generator
 		//fmt.Println("r", r)
-		nodes = append(nodes, fNet.Node(fNet.NodeID(uint64(r))))
+		nodes = append(nodes, fNet.Node(fNet.NodeID(r)))
 	}
 	return nodes
 }

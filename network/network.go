@@ -4,7 +4,6 @@ import (
 	"IBS/node"
 	"IBS/node/routing"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 )
@@ -27,7 +26,7 @@ type Delays [][]int32
 type Network struct {
 	bootNode       *node.Node
 	nodes          map[uint64]*node.Node
-	indexes        map[uint64]uint64
+	indexes        map[int]uint64
 	DelayOfRegions *Delays
 
 	RegionId          map[string]int
@@ -42,7 +41,7 @@ func NewNetwork(bootNode *node.Node) *Network {
 	net := &Network{
 		bootNode,
 		map[uint64]*node.Node{},
-		map[uint64]uint64{},
+		map[int]uint64{},
 		&Delays{},
 
 		make(map[string]int),
@@ -83,13 +82,10 @@ func (net *Network) loadConf() {
 		net.uploadBandwidth = append(net.uploadBandwidth, 1<<r.UploadBandwidth)
 		net.downloadBandwidth = append(net.downloadBandwidth, 1<<r.DownloadBandwidth)
 	}
-	fmt.Println("delays", net.DelayOfRegions)
-	fmt.Println("uploadBandwidth", net.uploadBandwidth)
-	fmt.Println("downloadBandwidth", net.downloadBandwidth)
 }
 
-func (net *Network) generateNodes(n int64, newNode func(int64, int, int, string) *node.Node) {
-	for i := int64(1); i <= n; i++ {
+func (net *Network) generateNodes(n int, newNode func(int64, int, int, string) *node.Node) {
+	for i := 1; i <= n; i++ {
 		regionIndex := 0
 		r := rand.Float32()
 		acc := float32(0)
@@ -100,11 +96,11 @@ func (net *Network) generateNodes(n int64, newNode func(int64, int, int, string)
 			acc += f
 		}
 		net.Add(newNode(
-			i,
+			int64(i),
 			net.downloadBandwidth[regionIndex],
 			net.uploadBandwidth[regionIndex],
 			net.regions[regionIndex],
-		), uint64(i))
+		), i)
 	}
 }
 
@@ -117,7 +113,7 @@ func (net *Network) Node(id uint64) *node.Node {
 }
 
 // NodeID (index in the network ->nodeID)
-func (net *Network) NodeID(id uint64) uint64 {
+func (net *Network) NodeID(id int) uint64 {
 	return net.indexes[id]
 }
 
@@ -135,7 +131,7 @@ func (net *Network) Connect(a, b *node.Node, f func(*node.Node) routing.PeerInfo
 	return true
 }
 
-func (net *Network) Add(n *node.Node, i uint64) {
+func (net *Network) Add(n *node.Node, i int) {
 	net.nodes[n.Id()] = n
 	net.indexes[i] = n.Id()
 }

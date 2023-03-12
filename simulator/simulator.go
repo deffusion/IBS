@@ -17,14 +17,14 @@ const NMessage = 1
 //}
 
 func main() {
-	//net := network.NewFloodNet(NetSize)
-	net := network.NewKadcastNet(NetSize)
+	net := network.NewFloodNet(NetSize)
+	//net := network.NewKadcastNet(NetSize)
 
 	var progress []*PacketStatistic
 
 	sorter := NewInfoSorter()
 	for i := 0; i < NMessage; i++ {
-		id := net.NodeID(uint64(i%NetSize + 1))
+		id := net.NodeID(i%NetSize + 1)
 		m := information.NewPacket(i, 1<<7, net.BootNode(), net.Node(id), net.Node(id), int64(20*i), net.Network)
 		ps := NewPacketStatistic()
 		ps.Timestamps[0] = m.InfoTimestamp()
@@ -36,7 +36,7 @@ func main() {
 	cnt := 0
 	regionCount := map[string]int{}
 	for i := 1; i <= NetSize; i++ {
-		id := net.NodeID(uint64(i))
+		id := net.NodeID(i)
 		//id := uint64(i)
 		//net.Node(id).PrintTable()
 		nPackets := net.Node(id).NumReceivedPackets()

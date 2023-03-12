@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-const K = 3
+const K = 5
 
 func NewKadcastNode(index int64, downloadBandwidth, uploadBandwidth int, region string) *node.Node {
 	nodeID := hash.Hash64(uint64(index))
@@ -27,7 +27,7 @@ type KadcastNet struct {
 	idSet *num_set.Set
 }
 
-func NewKadcastNet(size int64) *KadcastNet {
+func NewKadcastNet(size int) *KadcastNet {
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewNode(BootNodeID, 0, 0, "", routing.NewKadcastTable(BootNodeID, K))
 	net := NewNetwork(bootNode)
