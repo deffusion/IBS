@@ -3,6 +3,9 @@ package network
 import (
 	"IBS/node"
 	"IBS/node/routing"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
 )
 
@@ -11,51 +14,86 @@ const BootNodeID = 0
 func NewBasicPeerInfo(n *node.Node) routing.PeerInfo {
 	return routing.NewBasicPeerInfo(n.Id())
 }
-func NewKadcastPeerInfo(n *node.Node) routing.PeerInfo {
-	return routing.NewBasicPeerInfo(n.Id())
+
+type Region struct {
+	Region            string  `json:"region"`
+	UploadBandwidth   int     `json:"uploadBandwidth"`
+	DownloadBandwidth int     `json:"downloadBandwidth"`
+	Distribution      float32 `json:"distribution"`
 }
+
+type Delays [][]int32
 
 type Network struct {
 	bootNode       *node.Node
 	nodes          map[uint64]*node.Node
 	indexes        map[uint64]uint64
-	RegionId       map[string]int
-	Regions        []string
-	DelayOfRegions *[][]int32
+	DelayOfRegions *Delays
+
+	RegionId          map[string]int
+	regions           []string
+	nodeDistribution  []float32
+	uploadBandwidth   []int
+	downloadBandwidth []int
 }
 
 func NewNetwork(bootNode *node.Node) *Network {
-	regions := []string{"cn", "uk", "usa"}
-	regionId := make(map[string]int)
-	for i, region := range regions {
-		regionId[region] = i
-	}
 	// unit: μs (0.000,001s)
-	delayOfRegions := &[][]int32{
-		// unit: μs (0.000,001s)
-		{10_000, 200_000, 250_000},
-		{200_000, 3_000, 100_000},
-		{250_000, 100_000, 7_000},
-	}
-	return &Network{
+	net := &Network{
 		bootNode,
 		map[uint64]*node.Node{},
 		map[uint64]uint64{},
-		regionId,
-		regions,
-		delayOfRegions,
+		&Delays{},
+
+		make(map[string]int),
+		[]string{},
+		[]float32{},
+		[]int{},
+		[]int{},
 	}
+	net.loadConf()
+	return net
+}
+
+func (net *Network) loadConf() {
+	// DelayOfRegions
+	delay, err := ioutil.ReadFile("conf/delay.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(delay, net.DelayOfRegions)
+	if err != nil {
+		panic(err)
+	}
+
+	// regions
+	var regions []Region
+	region, err := ioutil.ReadFile("conf/region.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(region, &regions)
+	if err != nil {
+		panic(err)
+	}
+	for i, r := range regions {
+		net.RegionId[r.Region] = i
+		net.regions = append(net.regions, r.Region)
+		net.nodeDistribution = append(net.nodeDistribution, r.Distribution)
+		net.uploadBandwidth = append(net.uploadBandwidth, 1<<r.UploadBandwidth)
+		net.downloadBandwidth = append(net.downloadBandwidth, 1<<r.DownloadBandwidth)
+	}
+	fmt.Println("delays", net.DelayOfRegions)
+	fmt.Println("uploadBandwidth", net.uploadBandwidth)
+	fmt.Println("downloadBandwidth", net.downloadBandwidth)
 }
 
 func (net *Network) generateNodes(n int64, newNode func(int64, int, int, string) *node.Node) {
-	nodeDistribution := []float32{0.3, 0.1, 0.6}
-	uploadBandwidth := []int{1 << 19, 1 << 18, 1 << 17}
-	downloadBandwidth := []int{1 << 22, 1 << 21, 1 << 21}
 	for i := int64(1); i <= n; i++ {
 		regionIndex := 0
 		r := rand.Float32()
 		acc := float32(0)
-		for index, f := range nodeDistribution {
+		for index, f := range net.nodeDistribution {
 			if r > acc && r < acc+f {
 				regionIndex = index
 			}
@@ -63,9 +101,9 @@ func (net *Network) generateNodes(n int64, newNode func(int64, int, int, string)
 		}
 		net.Add(newNode(
 			i,
-			downloadBandwidth[regionIndex],
-			uploadBandwidth[regionIndex],
-			net.Regions[regionIndex],
+			net.downloadBandwidth[regionIndex],
+			net.uploadBandwidth[regionIndex],
+			net.regions[regionIndex],
 		), uint64(i))
 	}
 }

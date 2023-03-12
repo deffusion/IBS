@@ -1,0 +1,20 @@
+[
+  {
+    "region": "cn",
+    "uploadBandwidth": 19,
+    "downloadBandwidth": 22,
+    "distribution": 0.3
+  },
+  {
+    "region": "uk",
+    "uploadBandwidth": 18,
+    "downloadBandwidth": 21,
+    "distribution": 0.1
+  },
+  {
+    "region": "usa",
+    "uploadBandwidth": 17,
+    "downloadBandwidth": 21,
+    "distribution": 0.6
+  }
+]

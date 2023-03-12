@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 )
 
-const NetSize = 1000
+const NetSize = 10000
 const RecordUnit = NetSize / 10
 const NMessage = 1
 
@@ -18,34 +17,8 @@ const NMessage = 1
 //}
 
 func main() {
-	//msgGenerator := node.NewNode(0, 0, 0, "", nil)
-	// 2<<20 = 1M (Byte/s)
-	//net.GenerateNodes(NetSize, NewFloodNode)
-	//net.InitFloodConnections(MaxDegree)
-	//net := network.FloodNet{}
-
 	//net := network.NewFloodNet(NetSize)
 	net := network.NewKadcastNet(NetSize)
-	//net.GenerateNodes(NetSize, NewKadcastNode)
-	//net.InitKademliaConnections()
-
-	//id := net.NodeID(uint64(103))
-	//net.Node(id).PrintTable()
-	//return
-	//var t1 routing.Table = routing.NewFloodTable(10)
-	//node1 := node.NewNode(1, 1<<22, 1<<19, net.Regions[0], t1)
-	//var t2 routing.Table = routing.NewFloodTable(10)
-	//node2 := node.NewNode(2, 1<<21, 1<<19, net.Regions[1], t2)
-	//var t3 routing.Table = routing.NewFloodTable(10)
-	//node3 := node.NewNode(3, 1<<21, 1<<17, net.Regions[2], t3)
-	//net.Connect(node1, node2, NewFloodPeerInfo)
-	//net.Connect(node1, node3, NewFloodPeerInfo)
-	//net.Connect(node2, node3, NewFloodPeerInfo)
-	//net.Add(node1)
-	//net.Add(node2)
-	//net.Add(node3)
-	//var x Sayer
-	//p := information.NewPacket(1, 1024, msgGenerator, node1, node1, 0, net)
 
 	var progress []*PacketStatistic
 
@@ -126,8 +99,8 @@ func writePackets(p *[]OutputPacket) {
 		fmt.Println(err)
 	}
 	//fmt.Println(string(b))
-	os.Create("packets.json")
-	err = ioutil.WriteFile("packets.json", b, 0777)
+	//os.Create("packets.json")
+	err = ioutil.WriteFile("output/packets.json", b, 0777)
 	if err != nil {
 		fmt.Println(err)
 	}
