@@ -20,3 +20,15 @@ func TestMap(t *testing.T) {
 	b, ok := m[0]
 	fmt.Println(b, ok)
 }
+func TestNodeType(t *testing.T) {
+	//var n1 Node = NewNeNode(1, 1, 1, "cn", nil)
+	var n2 Node = NewBasicNode(2, 2, 2, "cn", nil)
+	switch n2.(type) {
+	case *NeNode:
+		fmt.Println("ne")
+	case *BasicNode:
+		fmt.Println("basic")
+	default:
+		fmt.Println("none")
+	}
+}

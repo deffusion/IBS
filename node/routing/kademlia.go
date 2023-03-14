@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const KeySpaceBits = 64
+const KeySpaceBits = 4
 
 type kademlia struct {
 	nodeID  uint64
@@ -58,12 +58,14 @@ func (k *kademlia) SetLastSeen(id uint64, timestamp int64) error {
 }
 
 func locate(k1, k2 uint64) int {
+
 	xor := k1 ^ k2
 	b := KeySpaceBits
 	for xor != 0 {
 		xor = xor >> 1
 		b--
 	}
+	//fmt.Println("locate", k1, k2, b)
 	return b
 }
 
@@ -89,6 +91,14 @@ func (k *kademlia) AddPeer(info PeerInfo) bool {
 		return true
 	}
 	return false
+}
+
+func (k *kademlia) PeersInBucket(b int) *[]uint64 {
+	ids := []uint64{}
+	for _, info := range k.buckets[b] {
+		ids = append(ids, info.PeerID())
+	}
+	return &ids
 }
 
 func (k *kademlia) PrintBuckets() {

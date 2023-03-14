@@ -65,6 +65,11 @@ func (t *KadcastTable) SetLastSeen(id uint64, timestamp int64) {
 		fmt.Println(err)
 	}
 }
+
+func PeersInBucket(t *KadcastTable, i int) *[]uint64 {
+	return t.kademlia.PeersInBucket(i)
+}
+
 func (t *KadcastTable) PrintTable() {
 	t.kademlia.PrintBuckets()
 }

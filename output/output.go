@@ -22,7 +22,7 @@ type Packet struct {
 	Redundancy bool   `json:"redundancy"`
 }
 
-func NewPacket(p *information.Packet) *Packet {
+func NewPacket(p *information.BasicPacket) *Packet {
 	return &Packet{
 		p.ID(),
 		p.Timestamp(),
@@ -57,7 +57,7 @@ type Node struct {
 	Running           bool   `json:"running"`
 }
 
-func NewNode(n *node.Node) *Node {
+func NewNode(n node.Node) *Node {
 	return &Node{
 		strconv.FormatUint(n.Id(), 16),
 		n.Region(),

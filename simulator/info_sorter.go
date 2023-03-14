@@ -9,7 +9,7 @@ import (
 //var mutex sync.Mutex
 
 type PacketSorter struct {
-	minHeap []*information.Packet
+	minHeap []information.Packet
 	length  int
 }
 
@@ -31,7 +31,7 @@ func (s *PacketSorter) Print() {
 	fmt.Println()
 }
 
-func (s *PacketSorter) Append(info *information.Packet) {
+func (s *PacketSorter) Append(info information.Packet) {
 	//mutex.Lock()
 	s.minHeap = append(s.minHeap, info)
 	s.length++
@@ -39,7 +39,7 @@ func (s *PacketSorter) Append(info *information.Packet) {
 	s.adjustUp(s.length - 1)
 }
 
-func (s *PacketSorter) Take() (*information.Packet, error) {
+func (s *PacketSorter) Take() (information.Packet, error) {
 	//mutex.Lock()
 	if s.length <= 1 {
 		return nil, errors.New("take info from an empty sorter")
