@@ -10,6 +10,8 @@ type BroadcastTask struct {
 }
 
 func (n *NeNode) NewBroadcastTask(infoID int) {
+	//n.SortPeers()
+	//n.PrintTable()
 	t := &BroadcastTask{}
 	t.infoID = infoID
 	for b := 0; b < routing.KeySpaceBits; b++ {

@@ -15,6 +15,12 @@
     "region": "usa",
     "uploadBandwidth": 17,
     "downloadBandwidth": 21,
-    "distribution": 0.6
+    "distribution": 0.5
+  },
+  {
+    "region": "africa",
+    "uploadBandwidth": 17,
+    "downloadBandwidth": 21,
+    "distribution": 0.1
   }
 ]

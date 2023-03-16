@@ -16,7 +16,7 @@ type meta struct {
 type Information struct {
 	*meta
 	originNode node.Node
-	relayer    node.Node
+	relayNode  node.Node
 }
 
 func (i *Information) ID() int {

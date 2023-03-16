@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"sort"
 	"time"
 )
 
-const KeySpaceBits = 4
+const KeySpaceBits = 64
 
 type kademlia struct {
 	nodeID  uint64
@@ -46,14 +45,12 @@ func FakeIDForBucket(nodeID uint64, b int) (uint64, error) {
 }
 
 func (k *kademlia) SetLastSeen(id uint64, timestamp int64) error {
-	b := k.nodeID ^ id
-	for _, info := range k.buckets[b] {
-		if info.PeerID() == id {
-			info.SetLastSeen(timestamp)
-			return nil
-		}
+	b, i := k.Locate(id)
+	if i != -1 {
+		k.buckets[b][i].SetLastSeen(timestamp)
+		return nil
 	}
-	str := fmt.Sprint("kademlia SetLastSeen: failed to find peer", id)
+	str := fmt.Sprintf("kademlia SetLastSeen: %d failed to find peer %d", k.nodeID, id)
 	return errors.New(str)
 }
 
@@ -69,28 +66,46 @@ func locate(k1, k2 uint64) int {
 	return b
 }
 
-func (k *kademlia) Locate(peerID uint64) int {
-	return locate(k.nodeID, peerID)
+func (k *kademlia) Locate(peerID uint64) (int, int) {
+	b := locate(k.nodeID, peerID)
+	for i, info := range k.buckets[b] {
+		if info.PeerID() == peerID {
+			return b, i
+		}
+	}
+	return b, -1
 }
 
-func (k *kademlia) AddPeer(info PeerInfo) bool {
-	b := k.Locate(info.PeerID())
-	if k.buckets[b].Includes(info) {
+func (k *kademlia) AddPeer(info PeerInfo) error {
+	b, i := k.Locate(info.PeerID())
+	if i != -1 {
 		// already included
-		return false
+		return errors.New("kademlia AddPeer: peer already included")
 	}
 	if k.buckets[b].Len() < k.k {
 		k.buckets[b] = append(k.buckets[b], info)
-		sort.Sort(k.buckets[b])
-		return true
+		//sort.Sort(k.buckets[b])
+		return nil
 	}
-	last := k.buckets[b][k.buckets[b].Len()-1]
-	if last.Score() < info.Score() {
-		k.buckets[b][k.buckets[b].Len()-1] = info
-		sort.Sort(k.buckets[b])
-		return true
+
+	//last := k.buckets[b][k.buckets[b].Len()-1]
+	//if last.Score() < info.Score() {
+	//	k.buckets[b][k.buckets[b].Len()-1] = info
+	//	sort.Sort(k.buckets[b])
+	//	return nil
+	//}
+	return errors.New("kademlia AddPeer: older peers are preferred")
+}
+
+func (k *kademlia) RemovePeer(info PeerInfo) {
+	b, i := k.Locate(info.PeerID())
+	if i == -1 {
+		return
 	}
-	return false
+	for ; i < len(k.buckets[b])-1; i++ {
+		k.buckets[b][i] = k.buckets[b][i+1]
+	}
+	k.buckets[b] = k.buckets[b][:i]
 }
 
 func (k *kademlia) PeersInBucket(b int) *[]uint64 {
@@ -106,7 +121,8 @@ func (k *kademlia) PrintBuckets() {
 		if len(bucket) > 0 {
 			fmt.Print("bucket", i, ": ")
 			for _, info := range bucket {
-				fmt.Printf("distance=%d(%d), ", info.PeerID()^k.nodeID, info.PeerID())
+				//fmt.Printf("distance=%d(%d), ", info.PeerID()^k.nodeID, info.PeerID())
+				fmt.Printf("score=%f(%d), ", info.Score(), info.PeerID())
 			}
 			fmt.Println()
 		}

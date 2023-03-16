@@ -4,10 +4,11 @@ type Table interface {
 	Length() int
 	SetPeerLimit(int)
 	PeerLimit() int
+	NoRoomForNewPeer(peerID uint64) bool
 	AddPeer(PeerInfo) error
-	RemovePeer(uint64)
+	RemovePeer(PeerInfo)
 	PeersToBroadcast(from uint64) []uint64
-	SetLastSeen(uint64, int64) // peerID, timestamp
+	SetLastSeen(uint64, int64) error // peerID, timestamp
 	PrintTable()
 }
 
@@ -18,7 +19,7 @@ type Table interface {
 
 type PeerInfo interface {
 	PeerID() uint64
-	Score() int64 // higher score, higher priority
+	Score() float64 // higher score, higher priority
 	SetLastSeen(int64)
 	LastSeen() int64
 }
@@ -57,8 +58,8 @@ func (i *BasicPeerInfo) PeerID() uint64 {
 	return i.id
 }
 
-func (i *BasicPeerInfo) Score() int64 {
-	return i.LastSeen()
+func (i *BasicPeerInfo) Score() float64 {
+	return float64(i.LastSeen())
 }
 
 func (i *BasicPeerInfo) SetLastSeen(lastSeen int64) {
@@ -66,4 +67,37 @@ func (i *BasicPeerInfo) SetLastSeen(lastSeen int64) {
 }
 func (i *BasicPeerInfo) LastSeen() int64 {
 	return i.lastSeen
+}
+
+type NecastPeerInfo struct {
+	*BasicPeerInfo
+	newMsg               int
+	confirmation         int
+	receivedConfirmation int
+	delay                int32
+}
+
+func NewNecastPeerInfo(id uint64) *NecastPeerInfo {
+	return &NecastPeerInfo{
+		NewBasicPeerInfo(id),
+		0,
+		0,
+		1,
+		1,
+	}
+}
+func (n *NecastPeerInfo) SetDelay(delay int32) {
+	//n.delay = 1
+}
+func (n *NecastPeerInfo) NewMsg() {
+	n.newMsg += 100
+}
+func (n *NecastPeerInfo) Confirmation() {
+	n.confirmation += 100
+}
+func (n *NecastPeerInfo) ReceivedConfirmation() {
+	n.receivedConfirmation += 100
+}
+func (n *NecastPeerInfo) Score() float64 {
+	return float64(n.newMsg+n.confirmation+n.receivedConfirmation) / float64(n.delay)
 }

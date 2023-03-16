@@ -12,5 +12,14 @@ func TestLocate(t *testing.T) {
 }
 
 func TestFakeID(t *testing.T) {
-	fmt.Println(fakeIDForBucket(0, 63))
+	fmt.Println(fakeIDForBucket(5, 0))
+}
+func TestRemove(t *testing.T) {
+	arr := []int{0, 1, 2, 3, 4, 5}
+	i := 2
+	for ; i < len(arr)-1; i++ {
+		arr[i] = arr[i+1]
+	}
+	arr = arr[:i]
+	fmt.Println(arr)
 }

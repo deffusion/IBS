@@ -3,12 +3,11 @@ package information
 import (
 	"IBS/network"
 	"IBS/node"
-	"fmt"
 	"sort"
 )
 
 type BasicPacket struct {
-	*Information
+	Information
 	timestamp           int64 // delay(μs) from the generation(timestamp) of information
 	propagationDelay    int32
 	transmissionDelay   int32
@@ -22,7 +21,7 @@ type BasicPacket struct {
 
 func NewBasicPacket(id, dataSize int, origin, from, to, relayer node.Node, timestamp int64, net *network.Network) *BasicPacket {
 	return &BasicPacket{
-		&Information{
+		Information{
 			&meta{
 				id,
 				timestamp,
@@ -54,6 +53,9 @@ func (p *BasicPacket) nextPacket(to node.Node, propagationDelay, transmissionDel
 	packet.timestamp += int64(propagationDelay + transmissionDelay)
 	return &packet
 }
+func (p *BasicPacket) ConfirmPacket() Packet {
+	return NewBasicPacket(p.ID(), 0, p.Origin(), p.To(), p.Origin(), p.Relay(), p.timestamp, p.net)
+}
 func (p *BasicPacket) NextPackets(IDs *[]uint64) Packets {
 	var packets Packets
 	sender := p.to
@@ -64,10 +66,14 @@ func (p *BasicPacket) NextPackets(IDs *[]uint64) Packets {
 	received := sender.Received(p.id, p.timestamp)
 	if received == true {
 		p.redundancy = true
+		//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
 		return packets
 	}
-
-	fmt.Printf("%d->%d info=%d hop=%d t=%d μs\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp)
+	switch sender.(type) {
+	case *node.NeNode:
+		sender.(*node.NeNode).NewMsg(p.From().Id())
+	}
+	//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
 	//IDs := sender.PeersToBroadCast(p.from)
 	regionID := p.net.RegionId
 	for _, toID := range *IDs {
@@ -87,6 +93,11 @@ func (p *BasicPacket) NextPackets(IDs *[]uint64) Packets {
 		//if p.from.Id() == p.net.BootNode().Id() {
 		//	packet.relayer = to
 		//}
+		//log.Println("fromID:", p.From().Id())
+		if p.From().Id() == network.BootNodeID {
+			//log.Println("set relayNode", to.Id())
+			packet.(*BasicPacket).relayNode = to
+		}
 		packets = append(packets, packet)
 	}
 	// add sending queuing delay for each packet
@@ -115,6 +126,9 @@ func (p *BasicPacket) Timestamp() int64 {
 }
 func (p *BasicPacket) Origin() node.Node {
 	return p.originNode
+}
+func (p *BasicPacket) Relay() node.Node {
+	return p.relayNode
 }
 func (p *BasicPacket) PropagationDelay() int32 {
 	return p.propagationDelay

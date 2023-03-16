@@ -22,7 +22,7 @@ type FloodNet struct {
 }
 
 func NewFloodNet(size int) *FloodNet {
-	maxDegree := 10
+	maxDegree := 15
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(0, 0, 0, "", routing.NewFloodTable(maxDegree))
 	net := NewNetwork(bootNode)
@@ -47,12 +47,19 @@ func (fNet *FloodNet) Introduce(n int) []node.Node {
 }
 
 func (fNet *FloodNet) initConnections() {
+	//var cnts []int
 	for _, node := range fNet.Nodes {
+		//cnt := 0
 		//fNet.bootNode.AddPeer(NewBasicPeerInfo(node))
 		connectCount := node.RoutingTableLength()
+		//cnts = append(cnts, fNet.MaxDgree-connectCount)
 		peers := fNet.Introduce(fNet.MaxDgree - connectCount)
 		for _, peer := range peers {
-			fNet.Connect(node, peer, NewBasicPeerInfo)
+			if fNet.Connect(node, peer, NewBasicPeerInfo) == true {
+				//cnt++
+			}
 		}
+		//cnts = append(cnts, cnt)
 	}
+	//fmt.Println("connect count: ", cnts)
 }

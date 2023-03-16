@@ -9,9 +9,11 @@ type Node interface {
 	UploadBandwidth() int
 	TsLastSending() int64
 	SetTsLastSending(int64)
-	NoRoomForNewPeer() bool
+	SetLastSeen(id uint64, timestamp int64) error
+	NoRoomForNewPeer(id uint64) bool
 	RoutingTableLength() int
-	AddPeer(routing.PeerInfo)
+	AddPeer(routing.PeerInfo) bool
+	RemovePeer(routing.PeerInfo)
 	PeersToBroadCast(Node) *[]uint64
 	Received(int, int64) bool
 	NumReceivedPackets() int

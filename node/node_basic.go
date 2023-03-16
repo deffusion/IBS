@@ -2,7 +2,6 @@ package node
 
 import (
 	"IBS/node/routing"
-	"fmt"
 )
 
 type BasicNode struct {
@@ -51,6 +50,9 @@ func (n *BasicNode) TsLastSending() int64 {
 func (n *BasicNode) SetTsLastSending(t int64) {
 	n.tsLastSending = t
 }
+func (n *BasicNode) SetLastSeen(id uint64, timestamp int64) error {
+	return n.routingTable.SetLastSeen(id, timestamp)
+}
 
 //func (n *BasicNode) LastDelay() int64 {
 //	return n.lastDelay
@@ -63,19 +65,25 @@ func (n *BasicNode) SetTsLastSending(t int64) {
 //	return true
 //}
 
-func (n *BasicNode) NoRoomForNewPeer() bool {
-	return n.routingTable.Length() >= n.routingTable.PeerLimit()
+func (n *BasicNode) NoRoomForNewPeer(peerID uint64) bool {
+	return n.routingTable.NoRoomForNewPeer(peerID)
 }
 
 func (n *BasicNode) RoutingTableLength() int {
 	return n.routingTable.Length()
 }
 
-func (n *BasicNode) AddPeer(peerInfo routing.PeerInfo) {
+func (n *BasicNode) AddPeer(peerInfo routing.PeerInfo) bool {
 	err := n.routingTable.AddPeer(peerInfo)
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
+		return false
 	}
+	return true
+}
+
+func (n *BasicNode) RemovePeer(peerInfo routing.PeerInfo) {
+	n.routingTable.RemovePeer(peerInfo)
 }
 
 // return id of peers

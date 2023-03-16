@@ -27,7 +27,7 @@ type KadcastNet struct {
 }
 
 func NewKadcastNet(size int) *KadcastNet {
-	const K = 3
+	const K = 2
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", routing.NewKadcastTable(BootNodeID, K))
 	net := NewNetwork(bootNode)
@@ -37,7 +37,7 @@ func NewKadcastNet(size int) *KadcastNet {
 		net,
 		num_set.NewSet(),
 	}
-	kNet.initConnections()
+	kNet.initConnections(NewBasicPeerInfo)
 	return kNet
 }
 
@@ -60,16 +60,28 @@ func (kNet *KadcastNet) Introduce(id uint64, n int) []node.Node {
 	return nodes
 }
 
-func (kNet *KadcastNet) initConnections() {
+func (kNet *KadcastNet) initConnections(f func(n node.Node) routing.PeerInfo) {
 	for _, node := range kNet.Nodes {
 		kNet.idSet.Insert(node.Id())
 	}
+	//var cnts []int
 	for _, node := range kNet.Nodes {
+		//cnt := 0
 		peers := kNet.Introduce(node.Id(), kNet.K)
+		//fmt.Print("intro: ")
+		//for _, peer := range peers {
+		//	fmt.Print(peer.Id(), " ")
+		//}
+		//fmt.Println("\nto", node.Id())
+		//peers := kNet.Nodes
 		for _, peer := range peers {
-			kNet.Connect(node, peer, NewBasicPeerInfo)
+			if kNet.Connect(node, peer, f) == true {
+				//cnt++
+			}
 		}
+		//cnts = append(cnts, cnt)
 	}
+	//fmt.Println("connect count: ", cnts)
 	//for _, node := range kNet.nodes {
 	//	fmt.Println("id=", node.Id())
 	//	node.PrintTable()

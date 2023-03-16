@@ -1,5 +1,9 @@
 package routing
 
+import (
+	"math/rand"
+)
+
 type NeCastTable struct {
 	MinFanOut int
 	KadcastTable
@@ -18,30 +22,119 @@ func NewNecastTable(nodeID uint64, bucketSize, minFanOut int) *NeCastTable {
 func (t *NeCastTable) PeersToBroadcast(from uint64) []uint64 {
 	b := 0
 	if from != 0 {
-		b = t.kademlia.Locate(from) + 1
+		_b, _ := t.kademlia.Locate(from)
+		b = _b + 1
 	}
 	var peers []uint64
 	// broadcast to all peers in buckets of subtree that height less than b
 	for i := b; i < KeySpaceBits; i++ {
-		for j, info := range t.buckets[i] {
-			if j >= t.MinFanOut {
-				break
-			}
-			peers = append(peers, info.PeerID())
-		}
+		ps := t.RandomPeerBasedOnScore(i, t.MinFanOut)
+		peers = append(peers, ps...)
 	}
 	return peers
 }
+
+//func (t *NeCastTable) PeersToBroadcast(from uint64) []uint64 {
+//	b := 0
+//	if from != 0 {
+//		_b, _ := t.kademlia.Locate(from)
+//		b = _b + 1
+//	}
+//	//fmt.Println("start from bucket", b)
+//	//t.PrintTable()
+//	var peers []uint64
+//	// broadcast to all peers in buckets of subtree that height less than b
+//	for i := b; i < KeySpaceBits; i++ {
+//		for ind, info := range t.buckets[i] {
+//			if ind > t.k {
+//				break
+//			}
+//			peers = append(peers, info.PeerID())
+//		}
+//	}
+//	return peers
+//}
 
 func (t *NeCastTable) IsNeighbour(ID uint64) bool {
 	if ID == 0 {
 		return false
 	}
-	b := t.Locate(ID)
-	for _, peerInfo := range t.kademlia.buckets[b] {
-		if peerInfo.PeerID() == ID {
-			return true
-		}
+	_, i := t.Locate(ID)
+	if i != -1 {
+		return true
 	}
 	return false
+}
+
+func (t *NeCastTable) necastPeerInfo(ID uint64) *NecastPeerInfo {
+	b, i := t.Locate(ID)
+	if i == -1 {
+		return nil
+	}
+	return t.buckets[b][i].(*NecastPeerInfo)
+}
+
+func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
+	if n > len(peers) {
+		n = len(peers)
+	}
+	totalScore := float64(0)
+	var scores []float64
+	var peerIDS []uint64
+	for _, peer := range peers {
+		peerIDS = append(peerIDS, peer.PeerID())
+		scores = append(scores, peer.Score())
+		totalScore += peer.Score()
+	}
+	var randomPeers []uint64
+	for n > 0 {
+		n--
+		nextIndex := 0
+		acc := float64(0)
+		r := rand.Float64()
+		for index, s := range scores {
+			if r > acc && r < acc+s/totalScore {
+				nextIndex = index
+				break
+			}
+			acc += s / totalScore
+		}
+		randomPeers = append(randomPeers, peerIDS[nextIndex])
+		totalScore -= scores[nextIndex]
+		for i := nextIndex; i < len(scores)-1; i++ {
+			peerIDS[i] = peerIDS[i+1]
+			scores[i] = scores[i+1]
+		}
+		scores = scores[:len(scores)-1]
+		peerIDS = peerIDS[:len(peerIDS)-1]
+	}
+	return randomPeers
+}
+
+func (t *NeCastTable) RandomPeerBasedOnScore(bucket, n int) []uint64 {
+	peers := t.buckets[bucket]
+	return randomPeersBasedOnScore(peers, n)
+}
+
+func (t *NeCastTable) IncrementNewMsg(ID uint64) {
+	pi := t.necastPeerInfo(ID)
+	if pi == nil {
+		return
+	}
+	pi.NewMsg()
+}
+func (t *NeCastTable) IncrementConfirmation(ID uint64) {
+	pi := t.necastPeerInfo(ID)
+	if pi == nil {
+		return
+	}
+	pi.Confirmation()
+}
+func (t *NeCastTable) IncrementReceivedConfirmation(ID uint64) {
+	//fmt.Println("confirm")
+	pi := t.necastPeerInfo(ID)
+	if pi == nil {
+		return
+	}
+	pi.ReceivedConfirmation()
 }

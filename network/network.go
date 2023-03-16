@@ -95,14 +95,14 @@ func (net *Network) generateNodes(n int, newNode func(int64, int, int, string, i
 			}
 			acc += f
 		}
-		node := newNode(
+		_node := newNode(
 			int64(i),
 			net.downloadBandwidth[regionIndex],
 			net.uploadBandwidth[regionIndex],
 			net.regions[regionIndex],
 			degree,
 		)
-		net.Add(node, i)
+		net.Add(_node, i)
 	}
 }
 
@@ -119,16 +119,51 @@ func (net *Network) NodeID(id int) uint64 {
 	return net.indexes[id]
 }
 
+//func (net *Network) Connect(a, b node.Node, f func(node.Node) routing.PeerInfo) bool {
+//	if a.Id() == b.Id() {
+//		return false
+//	}
+//	//fmt.Printf("connect %d to %d\n", a.Id(), b.Id())
+//	bInfo := f(b)
+//	if a.AddPeer(bInfo) == false {
+//		return false
+//	}
+//	aInfo := f(a)
+//	if b.AddPeer(aInfo) == false {
+//		a.RemovePeer(bInfo)
+//		return false
+//	}
+//
+//	switch aInfo.(type) {
+//	case *routing.NecastPeerInfo:
+//		delay := (*net.DelayOfRegions)[net.RegionId[a.Region()]][net.RegionId[b.Region()]]
+//		aInfo.(*routing.NecastPeerInfo).SetDelay(delay)
+//		bInfo.(*routing.NecastPeerInfo).SetDelay(delay)
+//	}
+//
+//	//fmt.Println("connect", a.Id(), b.Id())
+//	return true
+//}
+
 func (net *Network) Connect(a, b node.Node, f func(node.Node) routing.PeerInfo) bool {
+	//fmt.Println("connect", a.Id(), b.Id())
 	if a.Id() == b.Id() {
 		return false
 	}
-	if a.NoRoomForNewPeer() || b.NoRoomForNewPeer() {
-		return false
-	}
+	//if a.NoRoomForNewPeer(b.Id()) || b.NoRoomForNewPeer(a.Id()) {
+	//	return false
+	//}
 	//fmt.Printf("connect %d to %d\n", a.Id(), b.Id())
-	a.AddPeer(f(b))
-	b.AddPeer(f(a))
+	bInfo := f(b)
+	aInfo := f(a)
+	switch bInfo.(type) {
+	case *routing.NecastPeerInfo:
+		delay := (*net.DelayOfRegions)[net.RegionId[a.Region()]][net.RegionId[b.Region()]]
+		aInfo.(*routing.NecastPeerInfo).SetDelay(delay)
+		bInfo.(*routing.NecastPeerInfo).SetDelay(delay)
+	}
+	a.AddPeer(bInfo)
+	b.AddPeer(aInfo)
 	//fmt.Println("connect", a.Id(), b.Id())
 	return true
 }

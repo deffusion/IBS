@@ -29,9 +29,12 @@ func (t *FloodTable) SetPeerLimit(n int) {
 func (t *FloodTable) PeerLimit() int {
 	return t.limit
 }
+func (t *FloodTable) NoRoomForNewPeer(peerID uint64) bool {
+	return len(t.table) >= t.limit
+}
 
 func (t *FloodTable) AddPeer(peerInfo PeerInfo) error {
-	if len(t.table) < t.limit {
+	if !t.NoRoomForNewPeer(peerInfo.PeerID()) {
 		t.table[peerInfo.PeerID()] = peerInfo
 	} else {
 		s := fmt.Sprintf("adding peer into a full table, size:%d", t.limit)
@@ -40,24 +43,25 @@ func (t *FloodTable) AddPeer(peerInfo PeerInfo) error {
 	return nil
 }
 
-func (t *FloodTable) RemovePeer(id uint64) {
-	delete(t.table, id)
+func (t *FloodTable) RemovePeer(peerInfo PeerInfo) {
+	delete(t.table, peerInfo.PeerID())
 }
 
 func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
 	var peers []uint64
 	// broadcast to all peers except the sender
 	for id, _ := range t.table {
-		if uint64(id) != from {
+		if id != from {
 			peers = append(peers, uint64(id))
 		}
 	}
 	return peers
 }
 
-func (t *FloodTable) SetLastSeen(id uint64, timestamp int64) {
+func (t *FloodTable) SetLastSeen(id uint64, timestamp int64) error {
 	t.table[id].SetLastSeen(timestamp)
+	return nil
 }
 func (t *FloodTable) PrintTable() {
-
+	fmt.Println(t.table)
 }
