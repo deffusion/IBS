@@ -44,8 +44,9 @@ func NewKadcastNet(size int) *KadcastNet {
 // Introduce : return n nodes
 func (kNet *KadcastNet) Introduce(id uint64, n int) []node.Node {
 	var nodes []node.Node
-	for i := 0; i < routing.KeySpaceBits; i++ {
-		fakeID, err := routing.FakeIDForBucket(id, i)
+	for b := 0; b < routing.KeySpaceBits; b++ {
+		fakeID, err := routing.FakeIDForBucket(id, b)
+
 		if err != nil {
 			log.Fatal(err)
 		}

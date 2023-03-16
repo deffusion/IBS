@@ -35,6 +35,7 @@ func fakeIDForBucket(num uint64, b int) uint64 {
 }
 
 func FakeIDForBucket(nodeID uint64, b int) (uint64, error) {
+	b = KeySpaceBits - 1 - b
 	if b < 0 || b > 63 {
 		return nodeID, errors.New("FakeIDForBucket: out of range")
 	}
