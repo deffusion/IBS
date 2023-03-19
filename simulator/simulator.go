@@ -9,7 +9,7 @@ import (
 )
 
 const NetSize = 10000
-const Collapse = 5000
+const CollapseFrom = 1
 const RecordUnit = NetSize / 10
 const NMessage = 1_000
 const LogUnit = 1000
@@ -34,7 +34,8 @@ func main() {
 	//	outputNodes = append(outputNodes, output.NewNode(n))
 	//}
 	//output.WriteNodes(outputNodes)
-	net.NodeCollapse(Collapse)
+	cntCrash := net.NodeCrash(CollapseFrom)
+	fmt.Println("crashed: ", cntCrash)
 
 	var progress []*PacketStatistic
 
@@ -83,7 +84,7 @@ func main() {
 		//	statistic.Timestamps[3*unit]-statistic.Timestamps[2*unit],
 		//	statistic.Timestamps[4*unit]-statistic.Timestamps[3*unit],
 		//	statistic.Timestamps[5*unit]-statistic.Timestamps[4*unit])
-		fmt.Printf("packet %d coverage:(%d/%d) \n", i, statistic.Received, NetSize-Collapse)
+		fmt.Printf("packet %d coverage:(%d/%d) \n", i, statistic.Received, NetSize/2)
 	}
 
 	cnt := 0
@@ -99,7 +100,7 @@ func main() {
 			cnt++
 		}
 	}
-	fmt.Printf("(%d/%d) received, %d packets total\n", totalReceived, (NetSize-Collapse)*NMessage, total)
+	fmt.Printf("(%d/%d) received, %d packets total\n", totalReceived, (NetSize/2)*NMessage, total)
 	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", cnt, NetSize, NMessage, t)
 	fmt.Println(regionCount)
 }

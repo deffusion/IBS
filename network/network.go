@@ -84,7 +84,7 @@ func (net *Network) loadConf() {
 	}
 }
 
-func (net *Network) generateNodes(n int, newNode func(int64, int, int, string, int) node.Node, degree int) {
+func (net *Network) generateNodes(n int, newNode func(int, int, int, string, int) node.Node, degree int) {
 	for i := 1; i <= n; i++ {
 		regionIndex := 0
 		r := rand.Float32()
@@ -96,7 +96,7 @@ func (net *Network) generateNodes(n int, newNode func(int64, int, int, string, i
 			acc += f
 		}
 		_node := newNode(
-			int64(i),
+			i,
 			net.downloadBandwidth[regionIndex],
 			net.uploadBandwidth[regionIndex],
 			net.regions[regionIndex],
@@ -177,9 +177,19 @@ func (net *Network) Size() int {
 	return len(net.indexes)
 }
 
-func (net *Network) NodeCollapse(n int) {
-	for i := 1; i <= n; i++ {
-		id := net.NodeID(i)
-		net.Node(id).Stop()
+// NodeCrash crash nodes from i to netSize (according to correspond nodes)
+func (net *Network) NodeCrash(i int) int {
+	cnt := 0
+	if i < 1 {
+		i = 1
 	}
+	for ; i < net.Size(); i++ {
+		id := net.NodeID(i)
+		r := rand.Intn(net.Size())
+		if net.Node(id).CrashFactor() >= r {
+			cnt++
+			net.Node(id).Stop()
+		}
+	}
+	return cnt
 }

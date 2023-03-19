@@ -21,4 +21,5 @@ type Node interface {
 	PrintTable()
 	Run()
 	Stop()
+	CrashFactor() int
 }

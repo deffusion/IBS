@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"testing"
 )
 
@@ -31,4 +32,14 @@ func TestNodeType(t *testing.T) {
 	default:
 		fmt.Println("none")
 	}
+}
+func TestCorruptFunctionLinear(t *testing.T) {
+	acc := 0
+	for i := 0; i < 10000; i++ {
+		r := rand.Intn(10000)
+		if r <= i {
+			acc++
+		}
+	}
+	fmt.Println(acc)
 }

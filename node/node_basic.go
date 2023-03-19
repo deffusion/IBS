@@ -10,6 +10,7 @@ type BasicNode struct {
 	routingTable      routing.Table
 	downloadBandwidth int // byte/s
 	uploadBandwidth   int
+	crashFactor       int
 
 	//TsLastReceived int64 // the time(μs) when last packet was received
 	tsLastSending int64 // the time(μs) when last packet was sent
@@ -18,13 +19,14 @@ type BasicNode struct {
 	running         bool
 }
 
-func NewBasicNode(id uint64, downloadBandwidth, uploadBandwidth int, region string, table routing.Table) *BasicNode {
+func NewBasicNode(id uint64, downloadBandwidth, uploadBandwidth, crashFactor int, region string, table routing.Table) *BasicNode {
 	return &BasicNode{
 		id,
 		region,
 		table,
 		downloadBandwidth,
 		uploadBandwidth,
+		crashFactor,
 		//0,
 		0,
 		map[int]int64{},
@@ -115,4 +117,7 @@ func (n *BasicNode) Run() {
 }
 func (n *BasicNode) Stop() {
 	n.running = false
+}
+func (n *BasicNode) CrashFactor() int {
+	return n.crashFactor
 }

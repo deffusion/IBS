@@ -9,9 +9,9 @@ type NeNode struct {
 	Tasks map[int]*BroadcastTask // metaInfo id -> task
 }
 
-func NewNeNode(id uint64, downloadBandwidth, uploadBandwidth int, region string, table routing.Table) *NeNode {
+func NewNeNode(id uint64, downloadBandwidth, uploadBandwidth, crashFactor int, region string, table routing.Table) *NeNode {
 	n := &NeNode{
-		NewBasicNode(id, downloadBandwidth, uploadBandwidth, region, table),
+		NewBasicNode(id, downloadBandwidth, uploadBandwidth, crashFactor, region, table),
 		make(map[int]*BroadcastTask),
 	}
 	return n
