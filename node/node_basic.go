@@ -96,6 +96,9 @@ func (n *BasicNode) PeersToBroadCast(from Node) *[]uint64 {
 
 func (n *BasicNode) Received(msgId int, timestamp int64) bool {
 	_, ok := n.receivedPackets[msgId]
+	if timestamp == -1 {
+		return ok
+	}
 	if !ok {
 		n.receivedPackets[msgId] = timestamp
 	}

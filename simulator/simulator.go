@@ -8,11 +8,11 @@ import (
 	"log"
 )
 
-const NetSize = 10000
+const NetSize = 1000
 const CollapseFrom = 1
 const RecordUnit = NetSize / 10
-const NMessage = 1_000
-const LogUnit = 1000
+const NMessage = 10000
+const LogUnit = 100
 
 //func NewBasicPeerInfo(n *node.BasicNode) routing.PeerInfo {
 //	return routing.NewBasicPeerInfo(n.Id())
@@ -23,9 +23,9 @@ var packetStore map[int]*information.BasicPacket
 func main() {
 	log.Print("start")
 	packetStore = make(map[int]*information.BasicPacket)
-	net := network.NewFloodNet(NetSize)
+	//net := network.NewFloodNet(NetSize)
 	//net := network.NewKadcastNet(NetSize)
-	//net := network.NewNecastNet(NetSize)
+	net := network.NewNecastNet(NetSize)
 	log.Print("net ready")
 
 	//var outputNodes []*output.Node
@@ -112,44 +112,46 @@ func Run(sorter *PacketSorter, progress []*PacketStatistic) (int64, int) {
 	//var outputs []*output.Packet
 	for sorter.Length() > 0 {
 		p, _ := sorter.Take()
-		switch p.(type) {
-		case *information.TimerPacket:
-			peers := setTimer(sorter, p.(*information.TimerPacket))
-			packets := packetStore[p.ID()].NextPackets(&peers)
-			for _, packet := range packets {
-				sorter.Append(packet)
+		//switch p.(type) {
+		//case *information.TimerPacket:
+		//	peers := setTimer(sorter, p.(*information.TimerPacket))
+		//	packets := packetStore[p.ID()].NextPackets(&peers)
+		//	for _, packet := range packets {
+		//		sorter.Append(packet)
+		//	}
+		//case *information.BasicPacket:
+		packet := p.(*information.BasicPacket)
+		switch p.To().(type) {
+		case *node.NeNode:
+			neNode := p.To().(*node.NeNode)
+			// if the packet is sent by this node
+			//_, ok := neNode.Tasks[p.ID()]
+			ok := neNode.Received(packet.ID(), -1)
+			if ok && packet.From().Id() != network.BootNodeID {
+				//fmt.Println("123", packet.ID(), packet.From().Id(), packet.Relay())
+				//neNode.Confirm(packet.ID(), packet.From().Id(), packet.Relay().Id())
+				neNode.Confirmation(packet.From().Id(), packet.Relay().Id())
 			}
-		case *information.BasicPacket:
-			packet := p.(*information.BasicPacket)
-			switch p.To().(type) {
-			case *node.NeNode:
-				neNode := p.To().(*node.NeNode)
-				// if the packet is sent by this node
-				_, ok := neNode.Tasks[p.ID()]
-				if ok && packet.From().Id() != network.BootNodeID {
-					//fmt.Println("123", packet.ID(), packet.From().Id(), packet.Relay())
-					neNode.Confirm(packet.ID(), packet.From().Id(), packet.Relay().Id())
-				}
-			}
-			broadcast(sorter, packet)
-			n++
-			//if n%10000 == 0 {
-			//	fmt.Println(n)
-			//}
-			//outputs = append(outputs, output.NewPacket(packet))
-			if packet.Redundancy() == false {
-				ps := progress[p.ID()]
-				ps.Received++
-				if ps.Received%RecordUnit == 0 {
-					ps.Timestamps[ps.Received] = p.Timestamp()
-				}
-				t = p.Timestamp()
-				if ps.MaxHop < packet.Hop() {
-					ps.MaxHop = packet.Hop()
-				}
-			}
-			//tFinish = p.Timestamp()
 		}
+		broadcast(sorter, packet)
+		n++
+		//if n%10000 == 0 {
+		//	fmt.Println(n)
+		//}
+		//outputs = append(outputs, output.NewPacket(packet))
+		if packet.Redundancy() == false {
+			ps := progress[p.ID()]
+			ps.Received++
+			if ps.Received%RecordUnit == 0 {
+				ps.Timestamps[ps.Received] = p.Timestamp()
+			}
+			t = p.Timestamp()
+			if ps.MaxHop < packet.Hop() {
+				ps.MaxHop = packet.Hop()
+			}
+		}
+		//tFinish = p.Timestamp()
+		//}
 		//p.Print()
 
 	}
@@ -158,15 +160,15 @@ func Run(sorter *PacketSorter, progress []*PacketStatistic) (int64, int) {
 	return t, n
 }
 
-func setTimer(sorter *PacketSorter, p *information.TimerPacket) []uint64 {
-	neNode := p.To().(*node.NeNode)
-	peerIDs := neNode.PeersFromTask(p.ID(), -1)
-	// next timer
-	if len(peerIDs) > 0 {
-		sorter.Append(p.NextPacket(10_000)) // 10ms
-	}
-	return peerIDs
-}
+//func setTimer(sorter *PacketSorter, p *information.TimerPacket) []uint64 {
+//	neNode := p.To().(*node.NeNode)
+//	peerIDs := neNode.PeersFromTask(p.ID(), -1)
+//	// next timer
+//	if len(peerIDs) > 0 {
+//		sorter.Append(p.NextPacket(10_000)) // 10ms
+//	}
+//	return peerIDs
+//}
 
 func broadcast(sorter *PacketSorter, p *information.BasicPacket) {
 	var packets information.Packets
@@ -174,13 +176,15 @@ func broadcast(sorter *PacketSorter, p *information.BasicPacket) {
 	switch p.To().(type) {
 	case *node.NeNode:
 		neNode := p.To().(*node.NeNode)
-		if p.From().Id() == 0 {
-			neNode.NewBroadcastTask(p.ID())
-			//neNode.PrintTable()
-			peers = neNode.PeersFromTask(p.ID(), -1)
-		} else {
-			peers = *(neNode.PeersToBroadCast(p.From()))
-		}
+		//if p.From().Id() == 0 {
+		//	neNode.NewBroadcastTask(p.ID())
+		//	//neNode.PrintTable()
+		//	peers = neNode.PeersFromTask(p.ID(), -1)
+		//} else {
+		//	peers = *(neNode.PeersToBroadCast(p.From()))
+		//}
+		peers = *(neNode.PeersToBroadCast(p.From()))
+		//fmt.Println("peers", peers)
 		if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
 			packets = append(packets, p.ConfirmPacket())
 		}
