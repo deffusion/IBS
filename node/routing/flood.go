@@ -59,8 +59,11 @@ func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
 }
 
 func (t *FloodTable) SetLastSeen(id uint64, timestamp int64) error {
-	t.table[id].SetLastSeen(timestamp)
-	return nil
+	peer, ok := t.table[id]
+	if ok {
+		peer.SetLastSeen(timestamp)
+	}
+	return errors.New("flood SetLastSeen: No such peer")
 }
 func (t *FloodTable) PrintTable() {
 	fmt.Println(t.table)

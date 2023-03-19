@@ -8,10 +8,11 @@ import (
 	"log"
 )
 
-const NetSize = 100
-const Collapse = 50
+const NetSize = 10000
+const Collapse = 5000
 const RecordUnit = NetSize / 10
-const NMessage = 10_000
+const NMessage = 1_000
+const LogUnit = 1000
 
 //func NewBasicPeerInfo(n *node.BasicNode) routing.PeerInfo {
 //	return routing.NewBasicPeerInfo(n.Id())
@@ -22,9 +23,9 @@ var packetStore map[int]*information.BasicPacket
 func main() {
 	log.Print("start")
 	packetStore = make(map[int]*information.BasicPacket)
-	//net := network.NewFloodNet(NetSize)
+	net := network.NewFloodNet(NetSize)
 	//net := network.NewKadcastNet(NetSize)
-	net := network.NewNecastNet(NetSize)
+	//net := network.NewNecastNet(NetSize)
 	log.Print("net ready")
 
 	//var outputNodes []*output.Node
@@ -57,19 +58,19 @@ func main() {
 		//neNode.NewBroadcastTask(i)
 		//log.Println(neNode.Id(), "tasks", *neNode.Tasks[i])
 		//}
-		m := information.NewBasicPacket(i, 1<<7, n, net.BootNode(), n, nil, int64(1000000*i), net.Network)
+		m := information.NewBasicPacket(i, 1<<7, n, net.BootNode(), n, nil, int64(100_000_000*i), net.Network)
 		packetStore[m.ID()] = m
 		ps := NewPacketStatistic()
 		ps.Timestamps[0] = m.InfoTimestamp()
 		progress = append(progress, ps)
 		sorter.Append(m)
-		_t, _total := Run(sorter, progress)
-		t = _t
-		total += _total
 	}
+	t, total = Run(sorter, progress)
+	//t = _t
+	//total += _total
 	fmt.Println("progress:")
 	for i, statistic := range progress {
-		if i%NetSize != 0 {
+		if i%LogUnit != 0 {
 			continue
 		}
 		//unit := NetSize / 5
