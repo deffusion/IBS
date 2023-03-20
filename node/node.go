@@ -3,6 +3,7 @@ package node
 import "IBS/node/routing"
 
 type Node interface {
+	ResetRoutingTable(routing.Table)
 	Id() uint64
 	Region() string
 	DownloadBandwidth() int
@@ -13,7 +14,7 @@ type Node interface {
 	NoRoomForNewPeer(id uint64) bool
 	RoutingTableLength() int
 	AddPeer(routing.PeerInfo) bool
-	RemovePeer(routing.PeerInfo)
+	RemovePeer(uint64)
 	PeersToBroadCast(Node) *[]uint64
 	Received(int, int64) bool
 	NumReceivedPackets() int

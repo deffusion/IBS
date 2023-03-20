@@ -28,7 +28,7 @@ type KadcastNet struct {
 }
 
 func NewKadcastNet(size int) *KadcastNet {
-	const K = 2
+	const K = 1
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(BootNodeID, 0, 0, 0, "", routing.NewKadcastTable(BootNodeID, K))
 	net := NewNetwork(bootNode)
@@ -55,37 +55,40 @@ func (kNet *KadcastNet) Introduce(id uint64, n int) []node.Node {
 		// a crude node discovery implementation
 		ids := kNet.idSet.Around(fakeID, 2*n+1)
 		for _, u := range ids {
-			nodes = append(nodes, kNet.Node(u))
+			if kNet.Node(u).Running() == true {
+				nodes = append(nodes, kNet.Node(u))
+			}
 		}
 		//fmt.Println("introduce to:", id, "peerIDS:", ids)
 	}
 	return nodes
 }
 
-func (kNet *KadcastNet) initConnections(f func(n node.Node) routing.PeerInfo) {
-	for _, node := range kNet.Nodes {
-		kNet.idSet.Insert(node.Id())
+func (kNet *KadcastNet) initConnections(f NewPeerInfo) {
+	for _, n := range kNet.Nodes {
+		kNet.idSet.Insert(n.Id())
 	}
-	//var cnts []int
-	for _, node := range kNet.Nodes {
-		//cnt := 0
-		peers := kNet.Introduce(node.Id(), kNet.K)
-		//fmt.Print("intro: ")
-		//for _, peer := range peers {
-		//	fmt.Print(peer.Id(), " ")
-		//}
-		//fmt.Println("\nto", node.Id())
-		//peers := kNet.Nodes
-		for _, peer := range peers {
-			if kNet.Connect(node, peer, f) == true {
-				//cnt++
-			}
+	for _, n := range kNet.Nodes {
+		kNet.introduceAndConnect(n, f)
+	}
+}
+
+func (kNet *KadcastNet) introduceAndConnect(n node.Node, f NewPeerInfo) {
+	peers := kNet.Introduce(n.Id(), kNet.K)
+	for _, peer := range peers {
+		kNet.Connect(n, peer, f)
+	}
+}
+
+func (kNet *KadcastNet) Churn(crashFrom int) int {
+	for _, n := range kNet.Nodes {
+		if n.Running() == false {
+			// it can be seen as the crashed nodes leave the network
+			// and some new nodes entered
+			n.ResetRoutingTable(routing.NewKadcastTable(n.Id(), kNet.K))
+			n.Run()
+			kNet.introduceAndConnect(n, NewNecastPeerInfo)
 		}
-		//cnts = append(cnts, cnt)
 	}
-	//fmt.Println("connect count: ", cnts)
-	//for _, node := range kNet.nodes {
-	//	fmt.Println("id=", node.Id())
-	//	node.PrintTable()
-	//}
+	return kNet.NodeCrash(crashFrom)
 }

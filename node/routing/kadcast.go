@@ -41,8 +41,8 @@ func (t *KadcastTable) AddPeer(peerInfo PeerInfo) error {
 	return t.kademlia.AddPeer(peerInfo)
 }
 
-func (t *KadcastTable) RemovePeer(peerInfo PeerInfo) {
-	t.kademlia.RemovePeer(peerInfo)
+func (t *KadcastTable) RemovePeer(peerID uint64) {
+	t.kademlia.RemovePeer(peerID)
 }
 
 func (t *KadcastTable) PeersToBroadcast(from uint64) []uint64 {

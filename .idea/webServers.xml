@@ -9,6 +9,13 @@
           </advancedOptions>
         </fileTransfer>
       </webServer>
+      <webServer id="3d4e0d47-735f-4bc6-9bc7-d19ba9d521c0" name="cbi">
+        <fileTransfer rootFolder="/D:" accessType="SFTP" host="10.23.29.31" port="22" sshConfigId="4d7f4ca8-9d4c-4b69-85c4-059a5ed2ba77" sshConfig="cbi-01@10.23.29.31:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

@@ -10,6 +10,8 @@ import (
 
 const BootNodeID = 0
 
+type NewPeerInfo func(node.Node) routing.PeerInfo
+
 func NewBasicPeerInfo(n node.Node) routing.PeerInfo {
 	return routing.NewBasicPeerInfo(n.Id())
 }
@@ -145,7 +147,7 @@ func (net *Network) NodeID(id int) uint64 {
 //	return true
 //}
 
-func (net *Network) Connect(a, b node.Node, f func(node.Node) routing.PeerInfo) bool {
+func (net *Network) Connect(a, b node.Node, f NewPeerInfo) bool {
 	//fmt.Println("connect", a.Id(), b.Id())
 	if a.Id() == b.Id() {
 		return false
@@ -185,10 +187,11 @@ func (net *Network) NodeCrash(i int) int {
 	}
 	for ; i < net.Size(); i++ {
 		id := net.NodeID(i)
+		n := net.Node(id)
 		r := rand.Intn(net.Size())
-		if net.Node(id).CrashFactor() >= r {
+		if n.CrashFactor() >= r {
 			cnt++
-			net.Node(id).Stop()
+			n.Stop()
 		}
 	}
 	return cnt

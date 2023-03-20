@@ -6,7 +6,7 @@ type Table interface {
 	PeerLimit() int
 	NoRoomForNewPeer(peerID uint64) bool
 	AddPeer(PeerInfo) error
-	RemovePeer(PeerInfo)
+	RemovePeer(uint64)
 	PeersToBroadcast(from uint64) []uint64
 	SetLastSeen(uint64, int64) error // peerID, timestamp
 	PrintTable()

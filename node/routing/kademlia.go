@@ -98,8 +98,8 @@ func (k *kademlia) AddPeer(info PeerInfo) error {
 	return errors.New("kademlia AddPeer: older peers are preferred")
 }
 
-func (k *kademlia) RemovePeer(info PeerInfo) {
-	b, i := k.Locate(info.PeerID())
+func (k *kademlia) RemovePeer(peerID uint64) {
+	b, i := k.Locate(peerID)
 	if i == -1 {
 		return
 	}

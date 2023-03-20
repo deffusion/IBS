@@ -34,6 +34,10 @@ func NewBasicNode(id uint64, downloadBandwidth, uploadBandwidth, crashFactor int
 	}
 }
 
+func (n *BasicNode) ResetRoutingTable(table routing.Table) {
+	n.routingTable = table
+}
+
 func (n *BasicNode) Id() uint64 {
 	return n.id
 }
@@ -84,8 +88,8 @@ func (n *BasicNode) AddPeer(peerInfo routing.PeerInfo) bool {
 	return true
 }
 
-func (n *BasicNode) RemovePeer(peerInfo routing.PeerInfo) {
-	n.routingTable.RemovePeer(peerInfo)
+func (n *BasicNode) RemovePeer(peerID uint64) {
+	n.routingTable.RemovePeer(peerID)
 }
 
 // return id of peers

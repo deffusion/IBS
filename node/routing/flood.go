@@ -43,8 +43,8 @@ func (t *FloodTable) AddPeer(peerInfo PeerInfo) error {
 	return nil
 }
 
-func (t *FloodTable) RemovePeer(peerInfo PeerInfo) {
-	delete(t.table, peerInfo.PeerID())
+func (t *FloodTable) RemovePeer(peerID uint64) {
+	delete(t.table, peerID)
 }
 
 func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
@@ -52,7 +52,7 @@ func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
 	// broadcast to all peers except the sender
 	for id, _ := range t.table {
 		if id != from {
-			peers = append(peers, uint64(id))
+			peers = append(peers, id)
 		}
 	}
 	return peers
