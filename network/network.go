@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"math/rand"
+	"time"
 )
 
 const BootNodeID = 0
@@ -181,6 +182,7 @@ func (net *Network) Size() int {
 
 // NodeCrash crash nodes from i to netSize (according to correspond nodes)
 func (net *Network) NodeCrash(i int) int {
+	rand.Seed(time.Now().UnixMilli())
 	cnt := 0
 	if i < 1 {
 		i = 1

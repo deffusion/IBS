@@ -79,7 +79,6 @@ func (p *BasicPacket) NextPackets(IDs *[]uint64) Packets {
 	for _, toID := range *IDs {
 		to := p.net.Node(toID)
 		if to.Running() == false {
-			// TODO: remove the peer
 			continue
 		}
 		// p.to: sender of next packets

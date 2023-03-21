@@ -4,17 +4,18 @@ import (
 	"IBS/information"
 	"IBS/network"
 	"IBS/node"
+	"IBS/output"
 	"fmt"
 	"log"
 )
 
-const NetSize = 10000
-const CrashFrom = 1
+const NetSize = 1000
 const RecordUnit = NetSize / 10
 const NMessage = 10 * NetSize
 const LogUnit = 100
-const CrashSpan = 10_000_000        // 10s
-const PacketGenerationSpan = 10_000 // 10ms
+const PacketGenerationSpan = 2_000 // 10ms
+const CrashFrom = 1
+const CrashSpan = 30_000_000 // 30s
 //func NewBasicPeerInfo(n *node.BasicNode) routing.PeerInfo {
 //	return routing.NewBasicPeerInfo(n.Id())
 //}
@@ -29,45 +30,52 @@ func main() {
 	log.Print("start")
 	//packetStore = make(map[int]*information.BasicPacket)
 	//net := network.NewFloodNet(NetSize)
-	//net := network.NewKadcastNet(NetSize)
-	net := network.NewNecastNet(NetSize)
+	net := network.NewKadcastNet(NetSize)
+	//net := network.NewNecastNet(NetSize)
 	log.Print("net ready")
-	//var outputNodes []*output.Node
-	//for _, n := range net.Nodes {
-	//	//n.PrintTable()
-	//	outputNodes = append(outputNodes, output.NewNode(n))
-	//}
-	//output.WriteNodes(outputNodes)
-	cntCrash := net.Churn(CrashFrom)
-	fmt.Println("first crashed: ", cntCrash)
+	outputNodes := output.NewNodeOutput()
+	for _, n := range net.Nodes {
+		//n.PrintTable()
+		outputNodes.Append(n)
+	}
+	outputNodes.WriteNodes()
+	//cntCrash := net.Churn(CrashFrom)
+	//fmt.Println("first crashed: ", cntCrash)
 
 	var progress []*PacketStatistic
+	packetCoverage := output.NewCoverageOutput()
 
 	sorter := NewInfoSorter()
-	newPacketGeneration(net.Network, sorter, &progress, 0)
+	//newPacketGeneration(net.Network, sorter, &progress, 0)
+	for i := 0; i < NMessage; i++ {
+		newPacketGeneration(net.Network, sorter, &progress, int64(PacketGenerationSpan*i))
+	}
 	t := int64(0)
 	totalSent := 0 // infer bandwidth usage
 	totalReceived := 0
-	t, totalSent = Run(net, sorter, progress)
+	t, totalSent = Run(net, sorter, progress, packetCoverage)
 	//t = _t
 	//totalSent += _total
+	delayOutput := output.NewDelayOutput()
 	fmt.Println("progress:")
 	for i, statistic := range progress {
+		(*delayOutput)[i] = statistic.Delay()
 		if i%LogUnit != 0 {
 			continue
 		}
-		//unit := NetSize / 5
+		unit := NetSize / 5
 		//fmt.Printf("packet %d start at %d delay=%d\n",
 		//	i, statistic.Timestamps[0], statistic.Delay())
-		//fmt.Printf("packet %d delay=%d startAt:%d \t", i, statistic.Delay(), statistic.Timestamps[0])
-		//fmt.Println(
-		//	statistic.Timestamps[unit]-statistic.Timestamps[0],
-		//	statistic.Timestamps[2*unit]-statistic.Timestamps[unit],
-		//	statistic.Timestamps[3*unit]-statistic.Timestamps[2*unit],
-		//	statistic.Timestamps[4*unit]-statistic.Timestamps[3*unit],
-		//	statistic.Timestamps[5*unit]-statistic.Timestamps[4*unit])
-		fmt.Printf("packet %d coverage:(%d/%d) \n", i, statistic.Received, NetSize/2)
+		fmt.Printf("packet %d delay=%d startAt:%d \t", i, statistic.Delay(), statistic.Timestamps[0])
+		fmt.Println(
+			statistic.Timestamps[unit]-statistic.Timestamps[0],
+			statistic.Timestamps[2*unit]-statistic.Timestamps[unit],
+			statistic.Timestamps[3*unit]-statistic.Timestamps[2*unit],
+			statistic.Timestamps[4*unit]-statistic.Timestamps[3*unit],
+			statistic.Timestamps[5*unit]-statistic.Timestamps[4*unit])
+		//fmt.Printf("packet %d coverage:(%d/%d) \n", i, statistic.Received, NetSize/2)
 	}
+	delayOutput.WriteDelay()
 
 	cnt := 0
 	regionCount := map[string]int{}
@@ -82,21 +90,23 @@ func main() {
 			cnt++
 		}
 	}
-	fmt.Printf("(%d/%d) received, %d packets totalSent\n", totalReceived, (NetSize/2)*NMessage, totalSent)
+	fmt.Printf("(%d/%d) received, %d packets totalSent\n", totalReceived, (NetSize)*NMessage, totalSent)
 	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", cnt, NetSize, NMessage, t)
 	fmt.Println(regionCount)
 	log.Print("end")
+	packetCoverage.WriteCoverage()
 }
 
 func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[]*PacketStatistic, timestamp int64) {
 	var origin node.Node
-	for i := 1; i <= NetSize; i++ {
-		origin = net.Node(net.NodeID((i + lastOriginNodeIndex) % (NetSize + 1)))
+	for i := 0; i <= NetSize; i++ {
+		lastOriginNodeIndex = (lastOriginNodeIndex)%NetSize + 1
+		origin = net.Node(net.NodeID(lastOriginNodeIndex))
 		if origin.Running() == true {
-			lastOriginNodeIndex = i
 			break
 		}
 	}
+	//fmt.Println("packet:", lastPacketIndex, "broadcast from:", lastOriginNodeIndex)
 	m := information.NewBasicPacket(lastPacketIndex, 1<<7, origin, net.BootNode(), origin, nil, timestamp, net)
 	lastPacketGeneratedAt = timestamp
 	lastPacketIndex++
@@ -106,7 +116,7 @@ func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[
 	sorter.Append(m)
 }
 
-func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic) (int64, int) {
+func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, packetCoverage *output.PacketCoverageOutput) (int64, int) {
 	t := int64(0)
 	//tFinish := int64(0)
 	n := 0 // num of packets were broadcast
@@ -121,6 +131,9 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic) (in
 		//		sorter.Append(packet)
 		//	}
 		//case *information.BasicPacket:
+		if p.To().Running() == false {
+			continue
+		}
 		packet := p.(*information.BasicPacket)
 		switch p.To().(type) {
 		case *node.NeNode:
@@ -144,24 +157,24 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic) (in
 			//fmt.Println("necast")
 			nNet := net.(*network.NecastNet)
 			broadcast(nNet.Network, sorter, packet)
-			if packet.Timestamp()-lastCrashAt > CrashSpan {
-				lastCrashAt = packet.Timestamp()
-				fmt.Println("t:", packet.Timestamp(), "crashed:", nNet.Churn(CrashFrom))
-			}
-			if p.Timestamp()-lastPacketGeneratedAt > PacketGenerationSpan && lastPacketIndex < NMessage {
-				newPacketGeneration(nNet.Network, sorter, &progress, p.Timestamp())
-			}
+			//if packet.Timestamp()-lastCrashAt > CrashSpan {
+			//	lastCrashAt = packet.Timestamp()
+			//	fmt.Println("t:", packet.Timestamp(), "crashed:", nNet.Churn(CrashFrom))
+			//}
+			//if p.Timestamp()-lastPacketGeneratedAt > PacketGenerationSpan && lastPacketIndex < NMessage {
+			//	newPacketGeneration(nNet.Network, sorter, &progress, p.Timestamp())
+			//}
 		case *network.KadcastNet:
 			//fmt.Println("kadcast")
 			kNet := net.(*network.KadcastNet)
 			broadcast(kNet.Network, sorter, packet)
-			if packet.Timestamp()-lastCrashAt > CrashSpan {
-				lastCrashAt = packet.Timestamp()
-				fmt.Println("t:", packet.Timestamp(), "crashed:", kNet.Churn(CrashFrom))
-			}
-			if p.Timestamp()-lastPacketGeneratedAt > PacketGenerationSpan && lastPacketIndex < NMessage {
-				newPacketGeneration(kNet.Network, sorter, &progress, p.Timestamp())
-			}
+			//if packet.Timestamp()-lastCrashAt > CrashSpan {
+			//	lastCrashAt = packet.Timestamp()
+			//	fmt.Println("t:", packet.Timestamp(), "crashed:", kNet.Churn(CrashFrom))
+			//}
+			//if p.Timestamp()-lastPacketGeneratedAt > PacketGenerationSpan && lastPacketIndex < NMessage {
+			//	newPacketGeneration(kNet.Network, sorter, &progress, p.Timestamp())
+			//}
 		case *network.FloodNet:
 			broadcast(net.(*network.FloodNet).Network, sorter, packet)
 			//	TODO
@@ -170,6 +183,7 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic) (in
 		n++
 		//outputs = append(outputs, output.NewPacket(packet))
 		if packet.Redundancy() == false {
+			(*packetCoverage)[packet.ID()]++
 			ps := progress[p.ID()]
 			ps.Received++
 			if ps.Received%RecordUnit == 0 {
