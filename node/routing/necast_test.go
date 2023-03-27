@@ -2,6 +2,7 @@ package routing
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 )
 
@@ -34,6 +35,7 @@ func TestProbability(t *testing.T) {
 	p4.NewMsg()
 	p4.SetDelay(1)
 	peers = append(peers, p1, p2, p3, p4)
+	sort.Sort(peers)
 	fmt.Println("before", peers)
 	fmt.Println(randomPeersBasedOnScore(peers, 3))
 	fmt.Println("after", peers)

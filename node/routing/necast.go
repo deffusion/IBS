@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"math"
 	"math/rand"
 )
 
@@ -26,6 +27,7 @@ func (t *NeCastTable) PeersToBroadcast(from uint64) []uint64 {
 		b = _b + 1
 	}
 	var peers []uint64
+	t.SortPeers()
 	// broadcast to all peers in buckets of subtree that height less than b
 	for i := b; i < KeySpaceBits; i++ {
 		ps := t.RandomPeerBasedOnScore(i, t.MinFanOut)
@@ -75,16 +77,31 @@ func (t *NeCastTable) necastPeerInfo(ID uint64) *NecastPeerInfo {
 }
 
 func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
-	if n > len(peers) {
-		n = len(peers)
+	//if n > len(peers) {
+	//	n = len(peers)
+	//}
+	//totalScore := float64(0)
+	//var scores []float64
+	//var peerIDS []uint64
+	//for _, peer := range peers {
+	//	peerIDS = append(peerIDS, peer.PeerID())
+	//	scores = append(scores, peer.Score())
+	//	totalScore += peer.Score()
+	//}
+	l := len(peers)
+	if n > l {
+		n = l
 	}
 	totalScore := float64(0)
 	var scores []float64
 	var peerIDS []uint64
-	for _, peer := range peers {
+	R := int(math.Floor(math.Log2(float64(l))))
+	for i, peer := range peers {
+		r := int(math.Floor(math.Log2(float64(i + 1))))
 		peerIDS = append(peerIDS, peer.PeerID())
-		scores = append(scores, peer.Score())
-		totalScore += peer.Score()
+		score := 1 << (R - r)
+		scores = append(scores, float64(score))
+		totalScore += float64(score)
 	}
 	var randomPeers []uint64
 	for n > 0 {

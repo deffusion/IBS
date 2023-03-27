@@ -99,5 +99,5 @@ func (n *NecastPeerInfo) ReceivedConfirmation() {
 	n.receivedConfirmation += 100
 }
 func (n *NecastPeerInfo) Score() float64 {
-	return float64(n.newMsg+n.confirmation+n.receivedConfirmation) / float64(n.delay)
+	return float64(n.newMsg + n.confirmation + n.receivedConfirmation)
 }
