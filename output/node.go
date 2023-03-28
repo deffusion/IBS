@@ -18,7 +18,7 @@ type Node struct {
 
 func newNode(n node.Node) *Node {
 	return &Node{
-		strconv.FormatUint(n.Id(), 16),
+		strconv.FormatUint(n.Id(), 10),
 		n.Region(),
 		n.DownloadBandwidth(),
 		n.UploadBandwidth(),

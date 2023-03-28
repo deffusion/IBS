@@ -6,19 +6,23 @@ import (
 	"io/ioutil"
 )
 
-type DelayOutput map[int]int // packetID -> received
+type info struct {
+	Id     int    `json:"id"`
+	Delay  int    `json:"delay"`
+	Region string `json:"region"`
+}
+
+type DelayOutput []*info // packetID -> received
 
 func NewDelayOutput() *DelayOutput {
-	c := make(DelayOutput)
-	return &c
+	return &DelayOutput{}
 }
+func (o *DelayOutput) Append(id, delay int, region string) {
+	*o = append(*o, &info{id, delay, region})
+}
+
 func (o *DelayOutput) WriteDelay() {
-	var outputs [2][]int
-	for id, delay := range *o {
-		outputs[0] = append(outputs[0], id)
-		outputs[1] = append(outputs[1], delay)
-	}
-	b, err := json.Marshal(outputs)
+	b, err := json.Marshal(o)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -1,13 +1,17 @@
 package main
 
+import "IBS/node"
+
 type PacketStatistic struct {
+	From       node.Node
 	Received   int
 	MaxHop     int
 	Timestamps map[int]int64
 }
 
-func NewPacketStatistic() *PacketStatistic {
+func NewPacketStatistic(from node.Node) *PacketStatistic {
 	return &PacketStatistic{
+		from,
 		0,
 		0,
 		map[int]int64{},
