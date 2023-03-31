@@ -1,26 +1,18 @@
 [
   {
     "region": "a",
-    "uploadBandwidth": 19,
-    "downloadBandwidth": 22,
     "distribution": 0.3
   },
   {
     "region": "b",
-    "uploadBandwidth": 18,
-    "downloadBandwidth": 21,
     "distribution": 0.1
   },
   {
     "region": "c",
-    "uploadBandwidth": 17,
-    "downloadBandwidth": 21,
     "distribution": 0.4
   },
   {
     "region": "d",
-    "uploadBandwidth": 16,
-    "downloadBandwidth": 21,
     "distribution": 0.2
   }
 ]

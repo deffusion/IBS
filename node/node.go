@@ -6,7 +6,7 @@ type Node interface {
 	ResetRoutingTable(routing.Table)
 	Id() uint64
 	Region() string
-	DownloadBandwidth() int
+	//DownloadBandwidth() int
 	UploadBandwidth() int
 	TsLastSending() int64
 	SetTsLastSending(int64)
@@ -23,4 +23,7 @@ type Node interface {
 	Run()
 	Stop()
 	CrashFactor() int
+	CrashTimes() int
+	Infest()
+	Malicious() bool
 }

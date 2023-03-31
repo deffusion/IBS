@@ -6,15 +6,14 @@ import (
 )
 
 type NeCastTable struct {
-	MinFanOut int
 	KadcastTable
 }
 
-func NewNecastTable(nodeID uint64, bucketSize, minFanOut int) *NeCastTable {
+func NewNecastTable(nodeID uint64, k, beta int) *NeCastTable {
 	return &NeCastTable{
-		minFanOut,
 		KadcastTable{
-			NewKademlia(nodeID, bucketSize),
+			NewKademlia(nodeID, k),
+			beta,
 			0,
 		},
 	}
@@ -30,32 +29,11 @@ func (t *NeCastTable) PeersToBroadcast(from uint64) []uint64 {
 	t.SortPeers()
 	// broadcast to all peers in buckets of subtree that height less than b
 	for i := b; i < KeySpaceBits; i++ {
-		ps := t.RandomPeerBasedOnScore(i, t.MinFanOut)
+		ps := t.RandomPeerBasedOnScore(i, t.Beta)
 		peers = append(peers, ps...)
 	}
 	return peers
 }
-
-//func (t *NeCastTable) PeersToBroadcast(from uint64) []uint64 {
-//	b := 0
-//	if from != 0 {
-//		_b, _ := t.kademlia.Locate(from)
-//		b = _b + 1
-//	}
-//	//fmt.Println("start from bucket", b)
-//	//t.PrintTable()
-//	var peers []uint64
-//	// broadcast to all peers in buckets of subtree that height less than b
-//	for i := b; i < KeySpaceBits; i++ {
-//		for ind, info := range t.buckets[i] {
-//			if ind > t.k {
-//				break
-//			}
-//			peers = append(peers, info.PeerID())
-//		}
-//	}
-//	return peers
-//}
 
 func (t *NeCastTable) IsNeighbour(ID uint64) bool {
 	if ID == 0 {

@@ -5,32 +5,35 @@ import (
 )
 
 type BasicNode struct {
-	id                uint64
-	region            string
-	routingTable      routing.Table
-	downloadBandwidth int // byte/s
-	uploadBandwidth   int
-	crashFactor       int
+	id           uint64
+	region       string
+	routingTable routing.Table
+	//downloadBandwidth int // byte/s
+	uploadBandwidth int
+	crashFactor     int
+	crashTimes      int
 
 	//TsLastReceived int64 // the time(μs) when last packet was received
 	tsLastSending int64 // the time(μs) when last packet was sent
 
 	receivedPackets map[int]int64 // id -> delay
 	running         bool
+	malicious       bool
 }
 
-func NewBasicNode(id uint64, downloadBandwidth, uploadBandwidth, crashFactor int, region string, table routing.Table) *BasicNode {
+func NewBasicNode(id uint64, uploadBandwidth, crashFactor int, region string, table routing.Table) *BasicNode {
 	return &BasicNode{
 		id,
 		region,
 		table,
-		downloadBandwidth,
+		//downloadBandwidth,
 		uploadBandwidth,
 		crashFactor,
-		//0,
+		0,
 		0,
 		map[int]int64{},
 		true,
+		false,
 	}
 }
 
@@ -44,9 +47,10 @@ func (n *BasicNode) Id() uint64 {
 func (n *BasicNode) Region() string {
 	return n.region
 }
-func (n *BasicNode) DownloadBandwidth() int {
-	return n.downloadBandwidth
-}
+
+//func (n *BasicNode) DownloadBandwidth() int {
+//	return n.downloadBandwidth
+//}
 func (n *BasicNode) UploadBandwidth() int {
 	return n.uploadBandwidth
 }
@@ -123,8 +127,18 @@ func (n *BasicNode) Run() {
 	n.running = true
 }
 func (n *BasicNode) Stop() {
+	n.crashTimes++
 	n.running = false
 }
 func (n *BasicNode) CrashFactor() int {
 	return n.crashFactor
+}
+func (n *BasicNode) CrashTimes() int {
+	return n.crashTimes
+}
+func (n *BasicNode) Infest() {
+	n.malicious = true
+}
+func (n *BasicNode) Malicious() bool {
+	return n.malicious
 }

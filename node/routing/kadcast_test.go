@@ -38,3 +38,8 @@ func TestBucketLocating(t *testing.T) {
 	}
 	fmt.Println(b)
 }
+
+func TestRandomNFrom(t *testing.T) {
+	ids := []uint64{1, 2, 3, 4, 5, 6, 7}
+	fmt.Println(*randomNFrom(&ids, 3))
+}

@@ -2,17 +2,20 @@ package routing
 
 import (
 	"math"
+	"math/rand"
 	"sort"
 )
 
 type KadcastTable struct {
 	*kademlia
+	Beta      int
 	peerCount int
 }
 
-func NewKadcastTable(nodeID uint64, k int) *KadcastTable {
+func NewKadcastTable(nodeID uint64, k, beta int) *KadcastTable {
 	return &KadcastTable{
 		NewKademlia(nodeID, k),
+		beta,
 		0,
 	}
 }
@@ -56,14 +59,30 @@ func (t *KadcastTable) PeersToBroadcast(from uint64) []uint64 {
 	var peers []uint64
 	// broadcast to all peers in buckets of subtree that height less than b
 	for i := b; i < KeySpaceBits; i++ {
-		for ind, info := range t.buckets[i] {
-			if ind > t.k {
-				break
-			}
-			peers = append(peers, info.PeerID())
+		var idsInBucket []uint64
+		for _, info := range t.buckets[i] {
+			idsInBucket = append(idsInBucket, info.PeerID())
 		}
+		ids := randomNFrom(&idsInBucket, t.Beta)
+		peers = append(peers, *ids...)
 	}
 	return peers
+}
+
+func randomNFrom(ids *[]uint64, beta int) *[]uint64 {
+	if len(*ids) < beta {
+		return ids
+	}
+	var rids []uint64
+	for i := 0; i < beta; i++ {
+		r := rand.Intn(len(*ids))
+		rids = append(rids, (*ids)[r])
+		for j := r + 1; j < len(*ids); j++ {
+			(*ids)[j-1] = (*ids)[j]
+		}
+		*ids = (*ids)[:len(*ids)-1]
+	}
+	return &rids
 }
 
 func (t *KadcastTable) SetLastSeen(id uint64, timestamp int64) error {

@@ -36,7 +36,10 @@ func TestProbability(t *testing.T) {
 	p4.SetDelay(1)
 	peers = append(peers, p1, p2, p3, p4)
 	sort.Sort(peers)
+	for _, peer := range peers {
+		fmt.Printf("%d,%f\n", peer.PeerID(), peer.Score())
+	}
 	fmt.Println("before", peers)
-	fmt.Println(randomPeersBasedOnScore(peers, 3))
+	fmt.Println(randomPeersBasedOnScore(peers, 2))
 	fmt.Println("after", peers)
 }

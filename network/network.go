@@ -4,6 +4,7 @@ import (
 	"IBS/node"
 	"IBS/node/routing"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"time"
@@ -18,10 +19,13 @@ func NewBasicPeerInfo(n node.Node) routing.PeerInfo {
 }
 
 type Region struct {
-	Region            string  `json:"region"`
-	UploadBandwidth   int     `json:"uploadBandwidth"`
-	DownloadBandwidth int     `json:"downloadBandwidth"`
-	Distribution      float32 `json:"distribution"`
+	Region       string  `json:"region"`
+	Distribution float32 `json:"distribution"`
+}
+
+type Bandwidth struct {
+	UploadBandwidth int     `json:"uploadBandwidth"`
+	Distribution    float32 `json:"distribution"`
 }
 
 type Delays [][]int32
@@ -32,11 +36,12 @@ type Network struct {
 	indexes        map[int]uint64
 	DelayOfRegions *Delays
 
-	RegionId          map[string]int
-	regions           []string
-	nodeDistribution  []float32
-	uploadBandwidth   []int
-	downloadBandwidth []int
+	RegionId                    map[string]int
+	regions                     []string
+	nodeDistribution            []float32
+	uploadBandwidths            []int
+	uploadBandwidthDistribution []float32
+	//downloadBandwidth []int
 }
 
 func NewNetwork(bootNode node.Node) *Network {
@@ -51,7 +56,8 @@ func NewNetwork(bootNode node.Node) *Network {
 		[]string{},
 		[]float32{},
 		[]int{},
-		[]int{},
+		[]float32{},
+		//[]int{},
 	}
 	net.loadConf()
 	return net
@@ -78,16 +84,35 @@ func (net *Network) loadConf() {
 	if err != nil {
 		panic(err)
 	}
+
 	for i, r := range regions {
 		net.RegionId[r.Region] = i
 		net.regions = append(net.regions, r.Region)
 		net.nodeDistribution = append(net.nodeDistribution, r.Distribution)
-		net.uploadBandwidth = append(net.uploadBandwidth, 1<<r.UploadBandwidth)
-		net.downloadBandwidth = append(net.downloadBandwidth, 1<<r.DownloadBandwidth)
+		//net.uploadBandwidth = append(net.uploadBandwidth, 1<<r.UploadBandwidth)
+		//net.downloadBandwidth = append(net.downloadBandwidth, 1<<r.DownloadBandwidth)
 	}
+
+	// bandwidth
+	var bandwidths []Bandwidth
+	bandwidth, err := ioutil.ReadFile("conf/bandwidth.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(bandwidth, &bandwidths)
+	if err != nil {
+		panic(err)
+	}
+	for _, b := range bandwidths {
+		net.uploadBandwidthDistribution = append(net.uploadBandwidthDistribution, b.Distribution)
+		net.uploadBandwidths = append(net.uploadBandwidths, 1<<b.UploadBandwidth)
+	}
+
+	fmt.Println("upload bandwidth:", net.uploadBandwidths)
 }
 
-func (net *Network) generateNodes(n int, newNode func(int, int, int, string, int) node.Node, degree int) {
+func (net *Network) generateNodes(n int, newNode func(int, int, string, int) node.Node, degree int) {
+	rand.Seed(time.Now().Unix())
 	for i := 1; i <= n; i++ {
 		regionIndex := 0
 		r := rand.Float32()
@@ -98,10 +123,19 @@ func (net *Network) generateNodes(n int, newNode func(int, int, int, string, int
 			}
 			acc += f
 		}
+		bandwidthIndex := 0
+		r = rand.Float32()
+		acc = float32(0)
+		for index, f := range net.uploadBandwidthDistribution {
+			if r > acc && r < acc+f {
+				bandwidthIndex = index
+			}
+			acc += f
+		}
 		_node := newNode(
 			i,
-			net.downloadBandwidth[regionIndex],
-			net.uploadBandwidth[regionIndex],
+			//net.downloadBandwidth[regionIndex],
+			net.uploadBandwidths[bandwidthIndex],
 			net.regions[regionIndex],
 			degree,
 		)
@@ -187,13 +221,31 @@ func (net *Network) NodeCrash(i int) int {
 	if i < 1 {
 		i = 1
 	}
-	for ; i < net.Size(); i++ {
+	for ; i <= net.Size(); i++ {
 		id := net.NodeID(i)
 		n := net.Node(id)
 		r := rand.Intn(net.Size())
 		if n.CrashFactor() >= r {
 			cnt++
 			n.Stop()
+		}
+	}
+	return cnt
+}
+
+func (net *Network) NodeInfest(i int) int {
+	rand.Seed(time.Now().UnixMilli())
+	cnt := 0
+	if i < 1 {
+		i = 1
+	}
+	for ; i <= net.Size(); i++ {
+		id := net.NodeID(i)
+		n := net.Node(id)
+		r := rand.Intn(net.Size())
+		if n.CrashFactor() >= r {
+			cnt++
+			n.Infest()
 		}
 	}
 	return cnt
