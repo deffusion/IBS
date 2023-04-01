@@ -9,20 +9,24 @@ import (
 )
 
 type Node struct {
-	Id                string `json:"id"`
-	Region            string `json:"region"`
-	DownloadBandwidth int    `json:"downloadBandwidth"` // byte/s
-	UploadBandwidth   int    `json:"uploadBandwidth"`
-	Running           bool   `json:"running"`
+	Id     string `json:"id"`
+	Region string `json:"region"`
+	//DownloadBandwidth int    `json:"downloadBandwidth"` // byte/s
+	UploadBandwidth int  `json:"uploadBandwidth"`
+	Running         bool `json:"running"`
+	CrashFactor     int  `json:"crashFactor"`
+	CrashTimes      int  `json:"crashTimes"`
 }
 
 func newNode(n node.Node) *Node {
 	return &Node{
 		strconv.FormatUint(n.Id(), 10),
 		n.Region(),
-		n.DownloadBandwidth(),
+		//n.DownloadBandwidth(),
 		n.UploadBandwidth(),
 		n.Running(),
+		n.CrashFactor(),
+		n.CrashTimes(),
 	}
 }
 

@@ -54,12 +54,16 @@ func (p *BasicPacket) nextPacket(to node.Node, propagationDelay, transmissionDel
 	return &packet
 }
 func (p *BasicPacket) ConfirmPacket() Packet {
-	return NewBasicPacket(p.ID(), 0, p.Origin(), p.To(), p.Origin(), p.Relay(), p.timestamp, p.net)
+	return NewBasicPacket(p.ID(), 20, p.Origin(), p.To(), p.Origin(), p.Relay(), p.timestamp, p.net)
 }
 func (p *BasicPacket) NextPackets(IDs *[]uint64) Packets {
 	var packets Packets
 	sender := p.to
 	if sender.Running() == false {
+		return packets
+	}
+	if sender.Malicious() == true {
+		p.redundancy = true
 		return packets
 	}
 	receivedAt := p.timestamp
@@ -84,9 +88,6 @@ func (p *BasicPacket) NextPackets(IDs *[]uint64) Packets {
 		// p.to: sender of next packets
 		propagationDelay := (*p.net.DelayOfRegions)[regionID[sender.Region()]][regionID[to.Region()]]
 		bandwidth := sender.UploadBandwidth()
-		if bandwidth > to.DownloadBandwidth() {
-			bandwidth = to.DownloadBandwidth()
-		}
 		transmissionDelay := p.dataSize * 1_000_000 / bandwidth // μs
 		packet := p.nextPacket(to, propagationDelay, int32(transmissionDelay))
 		//if p.from.Id() == p.net.BootNode().Id() {
