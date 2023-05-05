@@ -29,8 +29,8 @@ func newPacket(p *information.BasicPacket) *Packet {
 		p.TransmissionDelay(),
 		p.QueuingDelaySending(),
 		//p.QueuingDelayReceiving(),
-		strconv.FormatUint(p.From().Id(), 16),
-		strconv.FormatUint(p.To().Id(), 16),
+		strconv.FormatUint(p.From().Id(), 10),
+		strconv.FormatUint(p.To().Id(), 10),
 		p.Hop(),
 		p.Redundancy(),
 	}

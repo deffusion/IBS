@@ -3,7 +3,6 @@ package network
 import (
 	"IBS/network/num_set"
 	"IBS/node"
-	"IBS/node/hash"
 	"IBS/node/routing"
 	"fmt"
 	"log"
@@ -15,12 +14,12 @@ type KadcastNet struct {
 	idSet *num_set.Set
 }
 
-const Beta = 4
+const Beta = 1
 const K = 15
 
 func NewKadcastNode(index int, uploadBandwidth int, region string, k int) node.Node {
-	nodeID := hash.Hash64(uint64(index))
-	//nodeID := uint64(index)
+	//nodeID := hash.Hash64(uint64(index))
+	nodeID := uint64(index)
 	return node.NewBasicNode(
 		nodeID,
 		uploadBandwidth,

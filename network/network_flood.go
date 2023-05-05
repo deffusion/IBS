@@ -2,7 +2,6 @@ package network
 
 import (
 	"IBS/node"
-	"IBS/node/hash"
 	"IBS/node/routing"
 	"fmt"
 	"math/rand"
@@ -10,8 +9,8 @@ import (
 
 func NewFloodNode(id int, uploadBandwidth int, region string, maxDegree int) node.Node {
 	return node.NewBasicNode(
-		//uint64(id),
-		hash.Hash64(uint64(id)),
+		uint64(id),
+		//hash.Hash64(uint64(id)),
 		uploadBandwidth,
 		id,
 		region,
@@ -25,7 +24,7 @@ type FloodNet struct {
 }
 
 func NewFloodNet(size int) *FloodNet {
-	maxDegree := 15
+	maxDegree := 9
 	fmt.Println("degree:", maxDegree)
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(0, 0, 0, "", routing.NewFloodTable(maxDegree))
