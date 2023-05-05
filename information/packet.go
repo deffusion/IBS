@@ -7,16 +7,16 @@ import (
 )
 
 type meta struct {
-	id        int
-	timestamp int64
-	dataSize  int // Byte
-	net       *network.Network
+	id         int
+	timestamp  int64
+	dataSize   int // Byte
+	net        *network.Network
+	originNode node.Node
 }
 
 type Information struct {
 	*meta
-	originNode node.Node
-	relayNode  node.Node
+	relayNode node.Node
 }
 
 func (i *Information) ID() int {
