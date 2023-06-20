@@ -5,6 +5,7 @@ import (
 	"IBS/network"
 	"IBS/node"
 	"IBS/output"
+	"container/heap"
 	"fmt"
 	"log"
 )
@@ -113,7 +114,8 @@ func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[
 	ps := NewPacketStatistic(origin)
 	ps.Timestamps[0] = m.InfoTimestamp()
 	*progress = append(*progress, ps)
-	sorter.Append(m)
+	heap.Push(sorter, m)
+	//sorter.Push(m)
 }
 
 func Run(net interface{}, sorter *PacketSorter, progress *[]*PacketStatistic, packetCoverage *output.PacketCoverageOutput) (int64, int, int) {
@@ -123,8 +125,9 @@ func Run(net interface{}, sorter *PacketSorter, progress *[]*PacketStatistic, pa
 	confirmCnt := 0
 	outputPackets := output.NewPacketOutput()
 	//var outputs []*output.Packet
-	for sorter.Length() > 0 {
-		p, _ := sorter.Take()
+	for sorter.Len() > 0 {
+		p := heap.Pop(sorter).(information.Packet)
+		//sorter.Take()
 		//switch p.(type) {
 		//case *information.TimerPacket:
 		//	peers := setTimer(sorter, p.(*information.TimerPacket))
@@ -253,6 +256,7 @@ func broadcast(net *network.Network, sorter *PacketSorter, p *information.BasicP
 
 	packets = append(p.NextPackets(&peers), packets...)
 	for _, packet := range packets {
-		sorter.Append(packet)
+		heap.Push(sorter, packet)
+		//sorter.Append(packet)
 	}
 }
