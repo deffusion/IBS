@@ -33,7 +33,7 @@ type Delays [][]int32
 type Network struct {
 	bootNode       node.Node
 	Nodes          map[uint64]node.Node
-	indexes        map[int]uint64
+	indexes        map[int]uint64 // order in the network -> id
 	DelayOfRegions *Delays
 
 	RegionId                    map[string]int
@@ -108,6 +108,8 @@ func (net *Network) loadConf() {
 	fmt.Println("upload bandwidth:", net.uploadBandwidths)
 }
 
+// generateNodes generate nodes by given newNode function, its region and bandwidth
+// is randomly assigned according to configuration files. And add the node into network
 func (net *Network) generateNodes(n int, newNode func(int, int, string, int) node.Node, degree int) {
 	rand.Seed(time.Now().Unix())
 	for i := 1; i <= n; i++ {
@@ -153,6 +155,7 @@ func (net *Network) NodeID(id int) uint64 {
 	return net.indexes[id]
 }
 
+// Connect two peers
 func (net *Network) Connect(a, b node.Node, f NewPeerInfo) bool {
 	//fmt.Println("connect", a.Id(), b.Id())
 	if a.Id() == b.Id() {
@@ -164,12 +167,6 @@ func (net *Network) Connect(a, b node.Node, f NewPeerInfo) bool {
 	//fmt.Printf("connect %d to %d\n", a.Id(), b.Id())
 	bInfo := f(b)
 	aInfo := f(a)
-	switch bInfo.(type) {
-	case *routing.NecastPeerInfo:
-		delay := (*net.DelayOfRegions)[net.RegionId[a.Region()]][net.RegionId[b.Region()]]
-		aInfo.(*routing.NecastPeerInfo).SetDelay(delay)
-		bInfo.(*routing.NecastPeerInfo).SetDelay(delay)
-	}
 	a.AddPeer(bInfo)
 	b.AddPeer(aInfo)
 	//fmt.Println("connect", a.Id(), b.Id())

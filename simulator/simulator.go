@@ -30,7 +30,6 @@ var lastOriginNodeIndex int
 var lastPacketGeneratedAt int64
 
 func main() {
-	log.Print("start 1")
 	//packetStore = make(map[int]*information.BasicPacket)
 	//net := network.NewFloodNet(NetSize)
 	net := network.NewKadcastNet(NetSize)
@@ -231,9 +230,7 @@ func broadcast(net *network.Network, sorter *PacketSorter, p *information.BasicP
 	case *node.NeNode:
 		neNode := p.To().(*node.NeNode)
 		peers = *(neNode.PeersToBroadCast(p.From()))
-		if neNode.Id() != p.Origin().Id() &&
-			neNode.IsNeighbour(p.Origin().Id()) &&
-			neNode.Id() != p.Relay().Id() {
+		if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
 			*confirmCnt++
 			packets = append(packets, p.ConfirmPacket())
 		}

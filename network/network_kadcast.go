@@ -32,7 +32,7 @@ func NewKadcastNet(size int) *KadcastNet {
 	fmt.Println("===== kademlia =====")
 	fmt.Println("beta:", Beta, "bucket size:", K)
 	// bootNode is used for message generation (from node) only here
-	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", routing.NewKadcastTable(BootNodeID, K, Beta))
+	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", nil)
 	net := NewNetwork(bootNode)
 	net.generateNodes(size, NewKadcastNode, K)
 	kNet := &KadcastNet{

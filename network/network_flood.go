@@ -42,7 +42,7 @@ func NewFloodNet(size int) *FloodNet {
 func (fNet *FloodNet) Introduce(n int) []node.Node {
 	var nodes []node.Node
 	for i := 0; i < n; i++ {
-		r := rand.Intn(fNet.Size()) + 1 // zero is the msg generator
+		r := rand.Intn(fNet.Size()) + 1 // zero is the index of msg generator
 		//fmt.Println("r", r)
 		nodes = append(nodes, fNet.Node(fNet.NodeID(r)))
 	}

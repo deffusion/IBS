@@ -23,9 +23,6 @@ func (i *Information) ID() int {
 	return i.id
 }
 
-//func (i *Information) getTimestamp() int64 {
-//	return i.timestamp
-//}
 func (i *Information) DataSize() int {
 	return i.dataSize
 }

@@ -30,11 +30,7 @@ func (n *NeNode) Confirmation(peerID, relayID uint64) {
 	table.IncrementReceivedConfirmation(peerID)
 }
 
-//func (n *NeNode) ReceivedConfirmation(peerID uint64) {
+//func (n *NeNode) SortPeers() {
 //	table := n.routingTable.(*routing.NeCastTable)
-//	table.IncrementReceivedConfirmation(peerID)
+//	table.SortPeers()
 //}
-func (n *NeNode) SortPeers() {
-	table := n.routingTable.(*routing.NeCastTable)
-	table.SortPeers()
-}

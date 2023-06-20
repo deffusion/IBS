@@ -24,6 +24,7 @@ func (t *Set) Insert(num uint64) bool {
 	return true
 }
 
+// TODO: use bin-search
 func (t *Set) locate(num uint64) int {
 	for i := len(t.s) - 1; i >= 0; i-- {
 		if t.s[i] <= num {
