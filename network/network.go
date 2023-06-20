@@ -41,7 +41,6 @@ type Network struct {
 	nodeDistribution            []float32
 	uploadBandwidths            []int
 	uploadBandwidthDistribution []float32
-	//downloadBandwidth []int
 }
 
 func NewNetwork(bootNode node.Node) *Network {
@@ -89,8 +88,6 @@ func (net *Network) loadConf() {
 		net.RegionId[r.Region] = i
 		net.regions = append(net.regions, r.Region)
 		net.nodeDistribution = append(net.nodeDistribution, r.Distribution)
-		//net.uploadBandwidth = append(net.uploadBandwidth, 1<<r.UploadBandwidth)
-		//net.downloadBandwidth = append(net.downloadBandwidth, 1<<r.DownloadBandwidth)
 	}
 
 	// bandwidth
@@ -155,32 +152,6 @@ func (net *Network) Node(id uint64) node.Node {
 func (net *Network) NodeID(id int) uint64 {
 	return net.indexes[id]
 }
-
-//func (net *Network) Connect(a, b node.Node, f func(node.Node) routing.PeerInfo) bool {
-//	if a.Id() == b.Id() {
-//		return false
-//	}
-//	//fmt.Printf("connect %d to %d\n", a.Id(), b.Id())
-//	bInfo := f(b)
-//	if a.AddPeer(bInfo) == false {
-//		return false
-//	}
-//	aInfo := f(a)
-//	if b.AddPeer(aInfo) == false {
-//		a.RemovePeer(bInfo)
-//		return false
-//	}
-//
-//	switch aInfo.(type) {
-//	case *routing.NecastPeerInfo:
-//		delay := (*net.DelayOfRegions)[net.RegionId[a.Region()]][net.RegionId[b.Region()]]
-//		aInfo.(*routing.NecastPeerInfo).SetDelay(delay)
-//		bInfo.(*routing.NecastPeerInfo).SetDelay(delay)
-//	}
-//
-//	//fmt.Println("connect", a.Id(), b.Id())
-//	return true
-//}
 
 func (net *Network) Connect(a, b node.Node, f NewPeerInfo) bool {
 	//fmt.Println("connect", a.Id(), b.Id())

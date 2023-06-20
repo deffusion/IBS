@@ -12,7 +12,7 @@ type BasicPacket struct {
 	propagationDelay    int32
 	transmissionDelay   int32
 	queuingDelaySending int32
-	//queuingDelayReceiving int32
+
 	from       node.Node
 	to         node.Node
 	hop        int

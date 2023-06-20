@@ -11,7 +11,7 @@ import (
 
 const NetSize = 1000
 const RecordUnit = NetSize / 10
-const NMessage = 30 * NetSize
+const NMessage = 10 * NetSize
 const LogUnit = NetSize
 const PacketGenerationInterval = 2_000 // ms
 const CrashFrom = 1
@@ -32,8 +32,8 @@ func main() {
 	log.Print("start 1")
 	//packetStore = make(map[int]*information.BasicPacket)
 	//net := network.NewFloodNet(NetSize)
-	//net := network.NewKadcastNet(NetSize)
-	net := network.NewNecastNet(NetSize)
+	net := network.NewKadcastNet(NetSize)
+	//net := network.NewNecastNet(NetSize)
 	log.Print("net ready")
 	fmt.Printf("NetSize: %d, NMessage: %d, PacketGenerationInterval: %d(μs), CrashSpan: %d(μs)\n",
 		NetSize, NMessage, PacketGenerationInterval, CrashSpan)

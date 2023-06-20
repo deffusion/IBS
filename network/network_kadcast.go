@@ -86,7 +86,6 @@ func (kNet *KadcastNet) Churn(crashFrom int) int {
 	for _, n := range kNet.Nodes {
 		if n.Running() == false {
 			// it can be seen as the crashed nodes leave the network
-			// and some new nodes entered
 			n.ResetRoutingTable(routing.NewKadcastTable(n.Id(), kNet.K, Beta))
 			n.Run()
 			kNet.introduceAndConnect(n, NewNecastPeerInfo)

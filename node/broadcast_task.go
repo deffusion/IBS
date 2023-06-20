@@ -1,13 +1,12 @@
 package node
 
-import "IBS/node/routing"
-
-type BroadcastTask struct {
-	infoID       int
-	confirmation [routing.KeySpaceBits]int
-	totalConfirm int
-	candidates   [routing.KeySpaceBits][]uint64
-}
+//unused
+//type BroadcastTask struct {
+//	infoID       int
+//	confirmation [routing.KeySpaceBits]int
+//	totalConfirm int
+//	candidates   [routing.KeySpaceBits][]uint64
+//}
 
 //func (n *NeNode) NewBroadcastTask(infoID int) {
 //	//n.SortPeers()

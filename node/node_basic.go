@@ -5,11 +5,10 @@ import (
 )
 
 type BasicNode struct {
-	id           uint64
-	region       string
-	routingTable routing.Table
-	//downloadBandwidth int // byte/s
-	uploadBandwidth int
+	id              uint64
+	region          string
+	routingTable    routing.Table
+	uploadBandwidth int // byte/s
 	crashFactor     int
 	crashTimes      int
 
@@ -104,7 +103,7 @@ func (n *BasicNode) PeersToBroadCast(from Node) *[]uint64 {
 
 func (n *BasicNode) Received(msgId int, timestamp int64) bool {
 	_, ok := n.receivedPackets[msgId]
-	if timestamp == -1 {
+	if timestamp == -1 { // just return whether this msg was received
 		return ok
 	}
 	if !ok {

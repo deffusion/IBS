@@ -8,6 +8,8 @@ import (
 
 //var mutex sync.Mutex
 
+var MAX = 0
+
 type PacketSorter struct {
 	minHeap []information.Packet
 	length  int
@@ -18,9 +20,12 @@ func (s PacketSorter) Length() int {
 }
 
 func NewInfoSorter() *PacketSorter {
-	s := &PacketSorter{}
-	s.minHeap = append(s.minHeap, nil)
-	s.length++
+	s := &PacketSorter{
+		make([]information.Packet, 1, 1<<16),
+		1,
+	}
+	//s.minHeap = append(s.minHeap, nil)
+	s.minHeap[0] = nil
 	return s
 }
 
@@ -35,6 +40,10 @@ func (s *PacketSorter) Append(info information.Packet) {
 	//mutex.Lock()
 	s.minHeap = append(s.minHeap, info)
 	s.length++
+	//if s.length > MAX {
+	//	MAX = s.length
+	//	fmt.Println("max:", MAX)
+	//}
 	//mutex.Unlock()
 	s.adjustUp(s.length - 1)
 }
