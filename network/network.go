@@ -1,12 +1,14 @@
 package network
 
 import (
+	"IBS/information"
 	"IBS/node"
 	"IBS/node/routing"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"sort"
 	"time"
 )
 
@@ -34,7 +36,7 @@ type Network struct {
 	bootNode       node.Node
 	Nodes          map[uint64]node.Node
 	indexes        map[int]uint64 // order in the network -> id
-	DelayOfRegions *Delays
+	DelayOfRegions Delays
 
 	RegionId                    map[string]int
 	regions                     []string
@@ -49,7 +51,7 @@ func NewNetwork(bootNode node.Node) *Network {
 		bootNode,
 		map[uint64]node.Node{},
 		map[int]uint64{},
-		&Delays{},
+		Delays{},
 
 		make(map[string]int),
 		[]string{},
@@ -68,7 +70,7 @@ func (net *Network) loadConf() {
 	if err != nil {
 		panic(err)
 	}
-	err = json.Unmarshal(delay, net.DelayOfRegions)
+	err = json.Unmarshal(delay, &net.DelayOfRegions)
 	if err != nil {
 		panic(err)
 	}
@@ -217,4 +219,95 @@ func (net *Network) NodeInfest(i int) int {
 		}
 	}
 	return cnt
+}
+
+func (net *Network) succeedingPackets(p *information.BasicPacket, IDs *[]uint64) information.Packets {
+	var packets information.Packets
+	sender := p.To()
+	if sender.Running() == false {
+		return packets
+	}
+	if sender.Malicious() == true {
+		p.SetRedundancy(true)
+		return packets
+	}
+	receivedAt := p.Timestamp()
+	received := sender.Received(p.ID(), p.Timestamp())
+	if received == true {
+		p.SetRedundancy(true)
+		//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
+		return packets
+	}
+	switch sender.(type) {
+	case *node.NeNode:
+		sender.(*node.NeNode).NewMsg(p.From().Id())
+	}
+	//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
+	//IDs := sender.PeersToBroadCast(p.from)
+	regionID := net.RegionId
+	for _, toID := range *IDs {
+		to := net.Node(toID)
+		if to.Running() == false {
+			continue
+		}
+		// p.to: sender of next packets
+		propagationDelay := net.DelayOfRegions[regionID[sender.Region()]][regionID[to.Region()]]
+		bandwidth := sender.UploadBandwidth()
+		transmissionDelay := p.DataSize() * 1_000_000 / bandwidth // μs
+		var packet *information.BasicPacket
+
+		//if p.from.Id() == p.net.BootNode().Id() {
+		//	packet.relayer = to
+		//}
+		//log.Println("fromID:", p.From().Id())
+		if p.From().Id() == BootNodeID {
+			//log.Println("set relayNode", to.Id())
+			packet = p.NextPacket(to, propagationDelay, int32(transmissionDelay), true)
+		} else {
+			packet = p.NextPacket(to, propagationDelay, int32(transmissionDelay), false)
+		}
+		packets = append(packets, packet)
+	}
+	// add sending queuing delay for each packet
+	// sending the packet that is earliest to be received first
+	sort.Sort(packets)
+	base := int32(0)
+	if receivedAt < sender.TsLastSending() {
+		base = int32(sender.TsLastSending() - receivedAt)
+	}
+	for _, packet := range packets {
+		bp := packet.(*information.BasicPacket)
+		bp.SetAndAddQueuingDelay(base)
+		base += bp.TransmissionDelay()
+		//packet.to.TsLastReceived = packet.timestamp
+	}
+	sender.SetTsLastSending(receivedAt + int64(base))
+	return packets
+}
+
+func (net *Network) PacketReplacement(p *information.BasicPacket, confirmCnt *int) information.Packets {
+	var packets information.Packets
+	var peers = p.To().PeersToBroadCast(p.From())
+	switch p.To().(type) {
+	case *node.NeNode:
+		neNode := p.To().(*node.NeNode)
+		//peers = neNode.PeersToBroadCast(p.From())
+		if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
+			*confirmCnt++
+			// send redundancy confirm packets to the origin node
+			packets = append(packets, p.ConfirmPacket())
+		}
+	}
+	crashCnt := 0
+	for i, peerID := range peers {
+		peers[i-crashCnt] = peers[i]
+		//fmt.Println("peerID", peerID)
+		if net.Node(peerID).Running() == false {
+			p.To().RemovePeer(peerID)
+			crashCnt++
+		}
+	}
+	peers = peers[:len(peers)-crashCnt]
+
+	return append(net.succeedingPackets(p, &peers), packets...)
 }

@@ -1,17 +1,16 @@
-package main
+package information
 
 import (
-	"IBS/information"
 	"fmt"
 )
 
 type PacketSorter struct {
-	minHeap []information.Packet
+	minHeap []Packet
 }
 
 func NewInfoSorter() *PacketSorter {
 	s := &PacketSorter{
-		make([]information.Packet, 0, 1<<16),
+		make([]Packet, 0, 1<<16),
 	}
 	return s
 }
@@ -26,7 +25,7 @@ func (s *PacketSorter) Swap(i, j int) {
 	s.minHeap[i], s.minHeap[j] = s.minHeap[j], s.minHeap[i]
 }
 func (s *PacketSorter) Push(x interface{}) {
-	s.minHeap = append(s.minHeap, x.(information.Packet))
+	s.minHeap = append(s.minHeap, x.(Packet))
 }
 func (s *PacketSorter) Pop() (v interface{}) {
 	v = s.minHeap[len(s.minHeap)-1]

@@ -1,7 +1,6 @@
-package main
+package information
 
 import (
-	"IBS/information"
 	"container/heap"
 	"fmt"
 	"testing"
@@ -12,13 +11,13 @@ func TestInfoSorter(t *testing.T) {
 	//var infos []*information.BasicPacket
 	sorter := NewInfoSorter()
 	for i, _ := range s {
-		p := information.NewBasicPacket(0, 0, nil, nil, nil, nil, s[i], nil)
+		p := NewBasicPacket(0, 0, nil, nil, nil, nil, s[i])
 		heap.Push(sorter, p)
 		fmt.Println(i, "append", p.Timestamp(), sorter.Len())
 	}
 	sorter.print()
 	for sorter.Len() > 0 {
-		info := heap.Pop(sorter).(information.Packet)
+		info := heap.Pop(sorter).(Packet)
 		fmt.Println("take", info.Timestamp())
 	}
 }

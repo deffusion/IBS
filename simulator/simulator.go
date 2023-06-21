@@ -32,8 +32,8 @@ var lastPacketGeneratedAt int64
 func main() {
 	//packetStore = make(map[int]*information.BasicPacket)
 	//net := network.NewFloodNet(NetSize)
-	net := network.NewKadcastNet(NetSize)
-	//net := network.NewNecastNet(NetSize)
+	//net := network.NewKadcastNet(NetSize)
+	net := network.NewNecastNet(NetSize)
 	log.Print("net ready")
 	fmt.Printf("NetSize: %d, NMessage: %d, PacketGenerationInterval: %d(μs), CrashSpan: %d(μs)\n",
 		NetSize, NMessage, PacketGenerationInterval, CrashSpan)
@@ -45,7 +45,7 @@ func main() {
 	var progress []*PacketStatistic
 	packetCoverage := output.NewCoverageOutput()
 
-	sorter := NewInfoSorter()
+	sorter := information.NewInfoSorter()
 	newPacketGeneration(net.Network, sorter, &progress, 0)
 	for i := 1; i < NMessage; i++ {
 		newPacketGeneration(net.Network, sorter, &progress, int64(PacketGenerationInterval*(i)))
@@ -97,7 +97,7 @@ func main() {
 }
 
 // newPacketGeneration select next node to init a \broadcast
-func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[]*PacketStatistic, timestamp int64) {
+func newPacketGeneration(net *network.Network, sorter *information.PacketSorter, progress *[]*PacketStatistic, timestamp int64) {
 	//fmt.Println("new packet generation", lastPacketIndex)
 	var origin node.Node
 	for i := 0; i <= NetSize; i++ {
@@ -108,7 +108,7 @@ func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[
 		}
 	}
 	//fmt.Println("packet:", lastPacketIndex, "broadcast from:", lastOriginNodeIndex)
-	m := information.NewBasicPacket(lastPacketIndex, 1<<7, origin, net.BootNode(), origin, nil, timestamp, net)
+	m := information.NewBasicPacket(lastPacketIndex, 1<<7, origin, net.BootNode(), origin, nil, timestamp)
 	lastPacketGeneratedAt = timestamp
 	lastPacketIndex++
 	ps := NewPacketStatistic(origin)
@@ -119,7 +119,7 @@ func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[
 }
 
 // Run the packet replacement process until no packet remains in the sorter
-func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, packetCoverage *output.PacketCoverageOutput) (int64, int, int) {
+func Run(net interface{}, sorter *information.PacketSorter, progress []*PacketStatistic, packetCoverage *output.PacketCoverageOutput) (int64, int, int) {
 	t := int64(0)
 	//tFinish := int64(0)
 	n := 0 // num of packets were broadcast
@@ -132,7 +132,7 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, pac
 		//switch p.(type) {
 		//case *information.TimerPacket:
 		//	peers := setTimer(sorter, p.(*information.TimerPacket))
-		//	packets := packetStore[p.ID()].NextPackets(&peers)
+		//	packets := packetStore[p.ID()].succeedingPackets(&peers)
 		//	for _, packet := range packets {
 		//		sorter.Append(packet)
 		//	}
@@ -144,6 +144,7 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, pac
 			continue
 		}
 		packet := p.(*information.BasicPacket)
+		var succeedingPackets information.Packets
 		switch p.To().(type) {
 		case *node.NeNode:
 			neNode := p.To().(*node.NeNode)
@@ -165,7 +166,7 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, pac
 		case *network.NecastNet:
 			//fmt.Println("necast")
 			//nNet := net.(*network.NecastNet)
-			broadcast(_net.Network, sorter, packet, &confirmCnt)
+			succeedingPackets = _net.Network.PacketReplacement(packet, &confirmCnt)
 			if packet.Timestamp()-lastCrashAt > CrashSpan {
 				lastCrashAt = packet.Timestamp()
 				fmt.Println("t:", packet.Timestamp(), "crashed:", _net.Churn(CrashFrom))
@@ -176,7 +177,7 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, pac
 		case *network.KadcastNet:
 			//fmt.Println("kadcast")
 			//kNet := net.(*network.KadcastNet)
-			broadcast(_net.Network, sorter, packet, &confirmCnt)
+			succeedingPackets = _net.Network.PacketReplacement(packet, &confirmCnt)
 			if packet.Timestamp()-lastCrashAt > CrashSpan {
 				lastCrashAt = packet.Timestamp()
 				fmt.Println("t:", packet.Timestamp(), "crashed:", _net.Churn(CrashFrom))
@@ -185,8 +186,11 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, pac
 			//	newPacketGeneration(kNet.Network, sorter, progress, p.Timestamp())
 			//}
 		case *network.FloodNet:
-			broadcast(_net.Network, sorter, packet, &confirmCnt)
+			succeedingPackets = _net.Network.PacketReplacement(packet, &confirmCnt)
 			//	TODO
+		}
+		for _, sp := range succeedingPackets {
+			heap.Push(sorter, sp)
 		}
 
 		n++
@@ -225,38 +229,38 @@ func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, pac
 //	return peerIDs
 //}
 
-func broadcast(net *network.Network, sorter *PacketSorter, p *information.BasicPacket, confirmCnt *int) {
-	var packets information.Packets
-	var peers = p.To().PeersToBroadCast(p.From())
-	switch p.To().(type) {
-	case *node.NeNode:
-		neNode := p.To().(*node.NeNode)
-		//peers = neNode.PeersToBroadCast(p.From())
-		if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
-			*confirmCnt++
-			// send redundancy confirm packets to the origin node
-			packets = append(packets, p.ConfirmPacket())
-		}
-		//default:
-		//peers = p.To().PeersToBroadCast(p.From())
-	}
-	//if p.From().Id() != 0 {
-	//	p.To().SetLastSeen(p.From().Id(), p.Timestamp())
-	//}
-	crashCnt := 0
-	for i, peerID := range peers {
-		peers[i-crashCnt] = peers[i]
-		//fmt.Println("peerID", peerID)
-		if net.Node(peerID).Running() == false {
-			p.To().RemovePeer(peerID)
-			crashCnt++
-		}
-	}
-	peers = peers[:len(peers)-crashCnt]
-
-	packets = append(p.NextPackets(&peers), packets...)
-	for _, packet := range packets {
-		heap.Push(sorter, packet)
-		//sorter.Append(packet)
-	}
-}
+//func broadcast(net *network.Network, sorter *PacketSorter, p *information.BasicPacket, confirmCnt *int) {
+//	var packets information.Packets
+//	var peers = p.To().PeersToBroadCast(p.From())
+//	switch p.To().(type) {
+//	case *node.NeNode:
+//		neNode := p.To().(*node.NeNode)
+//		//peers = neNode.PeersToBroadCast(p.From())
+//		if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
+//			*confirmCnt++
+//			// send redundancy confirm packets to the origin node
+//			packets = append(packets, p.ConfirmPacket())
+//		}
+//		//default:
+//		//peers = p.To().PeersToBroadCast(p.From())
+//	}
+//	//if p.From().Id() != 0 {
+//	//	p.To().SetLastSeen(p.From().Id(), p.Timestamp())
+//	//}
+//	crashCnt := 0
+//	for i, peerID := range peers {
+//		peers[i-crashCnt] = peers[i]
+//		//fmt.Println("peerID", peerID)
+//		if net.Node(peerID).Running() == false {
+//			p.To().RemovePeer(peerID)
+//			crashCnt++
+//		}
+//	}
+//	peers = peers[:len(peers)-crashCnt]
+//
+//	packets = append(net.succeedingPackets(p, &peers), packets...)
+//	for _, packet := range packets {
+//		heap.Push(sorter, packet)
+//		//sorter.Append(packet)
+//	}
+//}
