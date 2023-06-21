@@ -15,7 +15,7 @@ type Node interface {
 	RoutingTableLength() int
 	AddPeer(routing.PeerInfo) bool
 	RemovePeer(uint64)
-	PeersToBroadCast(Node) *[]uint64
+	PeersToBroadCast(Node) []uint64
 	Received(int, int64) bool
 	NumReceivedPackets() int
 	Running() bool

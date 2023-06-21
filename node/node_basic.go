@@ -96,9 +96,9 @@ func (n *BasicNode) RemovePeer(peerID uint64) {
 }
 
 // return id of peers
-func (n *BasicNode) PeersToBroadCast(from Node) *[]uint64 {
+func (n *BasicNode) PeersToBroadCast(from Node) []uint64 {
 	peerIDs := n.routingTable.PeersToBroadcast(from.Id())
-	return &peerIDs
+	return peerIDs
 }
 
 func (n *BasicNode) Received(msgId int, timestamp int64) bool {

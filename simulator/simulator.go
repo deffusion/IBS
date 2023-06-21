@@ -51,7 +51,7 @@ func main() {
 		newPacketGeneration(net.Network, sorter, &progress, int64(PacketGenerationInterval*(i)))
 	}
 	totalReceived := 0
-	t, totalSent, confirmCnt := Run(net, sorter, &progress, packetCoverage)
+	t, totalSent, confirmCnt := Run(net, sorter, progress, packetCoverage)
 	//t = _t
 	//totalSent += _total
 	delayOutput := output.NewDelayOutput()
@@ -67,7 +67,7 @@ func main() {
 	}
 	delayOutput.WriteDelay()
 
-	cnt := 0
+	receivedAll := 0
 	regionCount := map[string]int{}
 	bandwidthCount := map[int]int{}
 	for i := 1; i <= NetSize; i++ {
@@ -79,11 +79,11 @@ func main() {
 		regionCount[net.Node(id).Region()]++
 		bandwidthCount[net.Node(id).UploadBandwidth()]++
 		if nPackets == NMessage {
-			cnt++
+			receivedAll++
 		}
 	}
 	fmt.Printf("(%d/%d) received, %d packets totalSent (%d redundancy confirm packet)\n", totalReceived, (NetSize)*NMessage, totalSent, confirmCnt)
-	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", cnt, NetSize, NMessage, t)
+	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", receivedAll, NetSize, NMessage, t)
 	fmt.Println("region distribution:", regionCount)
 	fmt.Println("upload bandwidth distribution:", bandwidthCount)
 	log.Print("end")
@@ -96,6 +96,7 @@ func main() {
 	outputNodes.WriteNodes()
 }
 
+// newPacketGeneration select next node to init a \broadcast
 func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[]*PacketStatistic, timestamp int64) {
 	//fmt.Println("new packet generation", lastPacketIndex)
 	var origin node.Node
@@ -117,12 +118,13 @@ func newPacketGeneration(net *network.Network, sorter *PacketSorter, progress *[
 	//sorter.Push(m)
 }
 
-func Run(net interface{}, sorter *PacketSorter, progress *[]*PacketStatistic, packetCoverage *output.PacketCoverageOutput) (int64, int, int) {
+// Run the packet replacement process until no packet remains in the sorter
+func Run(net interface{}, sorter *PacketSorter, progress []*PacketStatistic, packetCoverage *output.PacketCoverageOutput) (int64, int, int) {
 	t := int64(0)
 	//tFinish := int64(0)
 	n := 0 // num of packets were broadcast
 	confirmCnt := 0
-	outputPackets := output.NewPacketOutput()
+	//outputPackets := output.NewPacketOutput()
 	//var outputs []*output.Packet
 	for sorter.Len() > 0 {
 		p := heap.Pop(sorter).(information.Packet)
@@ -159,31 +161,31 @@ func Run(net interface{}, sorter *PacketSorter, progress *[]*PacketStatistic, pa
 			}
 		}
 		// churn the network
-		switch net.(type) {
+		switch _net := net.(type) {
 		case *network.NecastNet:
 			//fmt.Println("necast")
-			nNet := net.(*network.NecastNet)
-			broadcast(nNet.Network, sorter, packet, &confirmCnt)
+			//nNet := net.(*network.NecastNet)
+			broadcast(_net.Network, sorter, packet, &confirmCnt)
 			if packet.Timestamp()-lastCrashAt > CrashSpan {
 				lastCrashAt = packet.Timestamp()
-				fmt.Println("t:", packet.Timestamp(), "crashed:", nNet.Churn(CrashFrom))
+				fmt.Println("t:", packet.Timestamp(), "crashed:", _net.Churn(CrashFrom))
 			}
 			//if p.Timestamp()-lastPacketGeneratedAt > PacketGenerationInterval && lastPacketIndex < NMessage {
 			//	newPacketGeneration(nNet.Network, sorter, progress, p.Timestamp())
 			//}
 		case *network.KadcastNet:
 			//fmt.Println("kadcast")
-			kNet := net.(*network.KadcastNet)
-			broadcast(kNet.Network, sorter, packet, &confirmCnt)
+			//kNet := net.(*network.KadcastNet)
+			broadcast(_net.Network, sorter, packet, &confirmCnt)
 			if packet.Timestamp()-lastCrashAt > CrashSpan {
 				lastCrashAt = packet.Timestamp()
-				fmt.Println("t:", packet.Timestamp(), "crashed:", kNet.Churn(CrashFrom))
+				fmt.Println("t:", packet.Timestamp(), "crashed:", _net.Churn(CrashFrom))
 			}
 			//if p.Timestamp()-lastPacketGeneratedAt > PacketGenerationInterval && lastPacketIndex < NMessage {
 			//	newPacketGeneration(kNet.Network, sorter, progress, p.Timestamp())
 			//}
 		case *network.FloodNet:
-			broadcast(net.(*network.FloodNet).Network, sorter, packet, &confirmCnt)
+			broadcast(_net.Network, sorter, packet, &confirmCnt)
 			//	TODO
 		}
 
@@ -191,7 +193,7 @@ func Run(net interface{}, sorter *PacketSorter, progress *[]*PacketStatistic, pa
 		//outputs = append(outputs, output.NewPacket(packet))
 		if packet.Redundancy() == false {
 			(*packetCoverage)[packet.ID()]++
-			ps := (*progress)[p.ID()]
+			ps := progress[p.ID()]
 			ps.Received++
 			if ps.Received%RecordUnit == 0 {
 				ps.Timestamps[ps.Received] = p.Timestamp()
@@ -204,11 +206,11 @@ func Run(net interface{}, sorter *PacketSorter, progress *[]*PacketStatistic, pa
 		//tFinish = p.Timestamp()
 		//}
 		//p.Print()
-		outputPackets.Append(packet)
+		//outputPackets.Append(packet)
 
 	}
 	//output.WritePackets(outputs)
-	outputPackets.WritePackets()
+	//outputPackets.WritePackets()
 
 	return t, n, confirmCnt
 }
@@ -225,17 +227,18 @@ func Run(net interface{}, sorter *PacketSorter, progress *[]*PacketStatistic, pa
 
 func broadcast(net *network.Network, sorter *PacketSorter, p *information.BasicPacket, confirmCnt *int) {
 	var packets information.Packets
-	var peers []uint64
+	var peers = p.To().PeersToBroadCast(p.From())
 	switch p.To().(type) {
 	case *node.NeNode:
 		neNode := p.To().(*node.NeNode)
-		peers = *(neNode.PeersToBroadCast(p.From()))
+		//peers = neNode.PeersToBroadCast(p.From())
 		if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
 			*confirmCnt++
+			// send redundancy confirm packets to the origin node
 			packets = append(packets, p.ConfirmPacket())
 		}
-	default:
-		peers = *(p.To().PeersToBroadCast(p.From()))
+		//default:
+		//peers = p.To().PeersToBroadCast(p.From())
 	}
 	//if p.From().Id() != 0 {
 	//	p.To().SetLastSeen(p.From().Id(), p.Timestamp())
