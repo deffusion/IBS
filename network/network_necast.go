@@ -1,6 +1,7 @@
 package network
 
 import (
+	"IBS/information"
 	"IBS/network/num_set"
 	"IBS/node"
 	"IBS/node/hash"
@@ -32,7 +33,7 @@ func NewNecastNet(size int) *NecastNet {
 	fmt.Println("beta:", Beta, "bucket size:", K)
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", routing.NewNecastTable(BootNodeID, K, Beta))
-	net := NewNetwork(bootNode)
+	net := NewBasicNetwork(bootNode)
 	net.generateNodes(size, NewNecastNode, K)
 	nNet := &NecastNet{
 		&KadcastNet{
@@ -46,12 +47,14 @@ func NewNecastNet(size int) *NecastNet {
 }
 
 func (nNet *NecastNet) Churn(crashFrom int) int {
-	for _, n := range nNet.Nodes {
-		if n.Running() == false {
-			n.ResetRoutingTable(routing.NewNecastTable(n.Id(), K, Beta))
-			n.Run()
-			nNet.introduceAndConnect(n, NewNecastPeerInfo)
-		}
+	return nNet.churn(crashFrom, routing.NewNecastTable)
+}
+
+func (nNet *NecastNet) PacketReplacement(p *information.BasicPacket) information.Packets {
+	packets := nNet.BaseNetwork.PacketReplacement(p)
+	neNode := p.To().(*node.NeNode)
+	if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
+		packets = append(packets, p.ConfirmPacket())
 	}
-	return nNet.NodeCrash(crashFrom)
+	return packets
 }

@@ -7,7 +7,7 @@ package information
 //	to        node.Node
 //}
 //
-//func NewTimerPacket(id, dataSize int, from, to node.Node, timestamp int64, net *network.Network) *TimerPacket {
+//func NewTimerPacket(id, dataSize int, from, to node.Node, timestamp int64, net *network.BaseNetwork) *TimerPacket {
 //	return &TimerPacket{
 //		&meta{
 //			id,

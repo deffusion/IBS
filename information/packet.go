@@ -9,7 +9,7 @@ type meta struct {
 	id        int
 	timestamp int64
 	dataSize  int // Byte
-	//net        *network.Network
+	//net        *network.BasicNetwork
 	originNode node.Node
 }
 

@@ -10,7 +10,7 @@ import (
 
 type KadcastNet struct {
 	K int
-	*Network
+	*BaseNetwork
 	idSet *num_set.Set
 }
 
@@ -33,7 +33,7 @@ func NewKadcastNet(size int) *KadcastNet {
 	fmt.Println("beta:", Beta, "bucket size:", K)
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", nil)
-	net := NewNetwork(bootNode)
+	net := NewBasicNetwork(bootNode)
 	net.generateNodes(size, NewKadcastNode, K)
 	kNet := &KadcastNet{
 		K,
@@ -82,16 +82,20 @@ func (kNet *KadcastNet) introduceAndConnect(n node.Node, f NewPeerInfo) {
 	}
 }
 
-func (kNet *KadcastNet) Churn(crashFrom int) int {
+func (kNet *KadcastNet) churn(crashFrom int, routing func(nodeID uint64, k, beta int) routing.Table) int {
 	for _, n := range kNet.Nodes {
 		if n.Running() == false {
 			// it can be seen as the crashed nodes leave the network
-			n.ResetRoutingTable(routing.NewKadcastTable(n.Id(), kNet.K, Beta))
+			n.ResetRoutingTable(routing(n.Id(), kNet.K, Beta))
 			n.Run()
 			kNet.introduceAndConnect(n, NewNecastPeerInfo)
 		}
 	}
 	return kNet.NodeCrash(crashFrom)
+}
+
+func (kNet *KadcastNet) Churn(crashFrom int) int {
+	return kNet.churn(crashFrom, routing.NewKadcastTable)
 }
 
 func (kNet *KadcastNet) Infest(crashFrom int) int {

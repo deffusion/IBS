@@ -14,8 +14,8 @@ type info struct {
 
 type DelayOutput []*info // packetID -> received
 
-func NewDelayOutput() *DelayOutput {
-	return &DelayOutput{}
+func NewDelayOutput() DelayOutput {
+	return DelayOutput{}
 }
 func (o *DelayOutput) Append(id, delay int, region string) {
 	*o = append(*o, &info{id, delay, region})

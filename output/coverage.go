@@ -8,9 +8,8 @@ import (
 
 type PacketCoverageOutput map[int]int // packetID -> received
 
-func NewCoverageOutput() *PacketCoverageOutput {
-	c := make(PacketCoverageOutput)
-	return &c
+func NewCoverageOutput() PacketCoverageOutput {
+	return make(PacketCoverageOutput)
 }
 func (o *PacketCoverageOutput) WriteCoverage() {
 	var outputs [2][]int

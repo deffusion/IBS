@@ -12,7 +12,7 @@ type KadcastTable struct {
 	peerCount int
 }
 
-func NewKadcastTable(nodeID uint64, k, beta int) *KadcastTable {
+func NewKadcastTable(nodeID uint64, k, beta int) Table {
 	return &KadcastTable{
 		NewKademlia(nodeID, k),
 		beta,

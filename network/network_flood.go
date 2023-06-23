@@ -19,8 +19,8 @@ func NewFloodNode(id int, uploadBandwidth int, region string, maxDegree int) nod
 }
 
 type FloodNet struct {
-	MaxDgree int
-	*Network
+	MaxDegree int
+	*BaseNetwork
 }
 
 func NewFloodNet(size int) *FloodNet {
@@ -28,7 +28,7 @@ func NewFloodNet(size int) *FloodNet {
 	fmt.Println("degree:", maxDegree)
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(0, 0, 0, "", routing.NewFloodTable(maxDegree))
-	net := NewNetwork(bootNode)
+	net := NewBasicNetwork(bootNode)
 	net.generateNodes(size, NewFloodNode, maxDegree)
 	fNet := &FloodNet{
 		maxDegree,
@@ -55,8 +55,8 @@ func (fNet *FloodNet) initConnections() {
 		//cnt := 0
 		//fNet.bootNode.AddPeer(NewBasicPeerInfo(node))
 		connectCount := node.RoutingTableLength()
-		//cnts = append(cnts, fNet.MaxDgree-connectCount)
-		peers := fNet.Introduce(fNet.MaxDgree - connectCount)
+		//cnts = append(cnts, fNet.MaxDegree-connectCount)
+		peers := fNet.Introduce(fNet.MaxDegree - connectCount)
 		for _, peer := range peers {
 			if fNet.Connect(node, peer, NewBasicPeerInfo) == true {
 				//cnt++
@@ -65,4 +65,9 @@ func (fNet *FloodNet) initConnections() {
 		//cnts = append(cnts, cnt)
 	}
 	//fmt.Println("connect count: ", cnts)
+}
+
+func (fNet FloodNet) Churn(int) int {
+	// TODO: crash nodes in flood net
+	return 0
 }
