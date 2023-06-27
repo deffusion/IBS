@@ -16,7 +16,7 @@ type NecastNet struct {
 func NewNecastPeerInfo(n node.Node) routing.PeerInfo {
 	return routing.NewNecastPeerInfo(n.Id())
 }
-func NewNecastNode(index int, uploadBandwidth int, region string, k int) node.Node {
+func NewNecastNode(index int, uploadBandwidth int, region string, config map[string]int) node.Node {
 	nodeID := hash.Hash64(uint64(index))
 	//nodeID := uint64(index)
 	return node.NewNeNode(
@@ -24,20 +24,22 @@ func NewNecastNode(index int, uploadBandwidth int, region string, k int) node.No
 		uploadBandwidth,
 		index,
 		region,
-		routing.NewNecastTable(nodeID, k, Beta),
+		routing.NewNecastTable(nodeID, config["k"], config["beta"]),
 	)
 }
 
-func NewNecastNet(size int) *NecastNet {
+func NewNecastNet(size, k, beta int) *NecastNet {
 	fmt.Println("===== ne-kademlia =====")
-	fmt.Println("beta:", Beta, "bucket size:", K)
+	fmt.Println("beta:", beta, "bucket size:", k)
 	// bootNode is used for message generation (from node) only here
-	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", routing.NewNecastTable(BootNodeID, K, Beta))
+	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", nil)
 	net := NewBasicNetwork(bootNode)
-	net.generateNodes(size, NewNecastNode, K)
+	config := map[string]int{"k": k, "beta": beta}
+	net.generateNodes(size, NewNecastNode, config)
 	nNet := &NecastNet{
 		&KadcastNet{
-			K,
+			k,
+			beta,
 			net,
 			num_set.NewSet(),
 		},

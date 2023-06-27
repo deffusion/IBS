@@ -9,15 +9,12 @@ import (
 )
 
 type KadcastNet struct {
-	K int
+	k, beta int
 	*BaseNetwork
 	idSet *num_set.Set
 }
 
-const Beta = 1
-const K = 15
-
-func NewKadcastNode(index int, uploadBandwidth int, region string, k int) node.Node {
+func NewKadcastNode(index int, uploadBandwidth int, region string, config map[string]int) node.Node {
 	//nodeID := hash.Hash64(uint64(index))
 	nodeID := uint64(index)
 	return node.NewBasicNode(
@@ -25,18 +22,20 @@ func NewKadcastNode(index int, uploadBandwidth int, region string, k int) node.N
 		uploadBandwidth,
 		index,
 		region,
-		routing.NewKadcastTable(nodeID, k, Beta),
+		routing.NewKadcastTable(nodeID, config["k"], config["beta"]),
 	)
 }
-func NewKadcastNet(size int) *KadcastNet {
+func NewKadcastNet(size, k, beta int) *KadcastNet {
 	fmt.Println("===== kademlia =====")
-	fmt.Println("beta:", Beta, "bucket size:", K)
+	fmt.Println("beta:", beta, "bucket size:", k)
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", nil)
 	net := NewBasicNetwork(bootNode)
-	net.generateNodes(size, NewKadcastNode, K)
+	config := map[string]int{"k": k, "beta": beta}
+	net.generateNodes(size, NewKadcastNode, config)
 	kNet := &KadcastNet{
-		K,
+		k,
+		beta,
 		net,
 		num_set.NewSet(),
 	}
@@ -76,7 +75,7 @@ func (kNet *KadcastNet) initConnections(f NewPeerInfo) {
 }
 
 func (kNet *KadcastNet) introduceAndConnect(n node.Node, f NewPeerInfo) {
-	peers := kNet.Introduce(n.Id(), kNet.K)
+	peers := kNet.Introduce(n.Id(), kNet.k)
 	for _, peer := range peers {
 		kNet.Connect(n, peer, f)
 	}
@@ -86,7 +85,7 @@ func (kNet *KadcastNet) churn(crashFrom int, routing func(nodeID uint64, k, beta
 	for _, n := range kNet.Nodes {
 		if n.Running() == false {
 			// it can be seen as the crashed nodes leave the network
-			n.ResetRoutingTable(routing(n.Id(), kNet.K, Beta))
+			n.ResetRoutingTable(routing(n.Id(), kNet.k, kNet.beta))
 			n.Run()
 			kNet.introduceAndConnect(n, NewNecastPeerInfo)
 		}

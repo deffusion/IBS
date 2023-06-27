@@ -20,6 +20,6 @@ func NewPacketStatistic(from node.Node, timestamp int64) *PacketStatistic {
 	}
 }
 
-func (ps *PacketStatistic) Delay() int {
-	return int(ps.Timestamps[NetSize] - ps.Timestamps[0])
+func (ps *PacketStatistic) Delay(last int) int {
+	return int(ps.Timestamps[last] - ps.Timestamps[0])
 }

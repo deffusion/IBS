@@ -7,14 +7,14 @@ import (
 	"math/rand"
 )
 
-func NewFloodNode(id int, uploadBandwidth int, region string, maxDegree int) node.Node {
+func NewFloodNode(id int, uploadBandwidth int, region string, config map[string]int) node.Node {
 	return node.NewBasicNode(
 		uint64(id),
 		//hash.Hash64(uint64(id)),
 		uploadBandwidth,
 		id,
 		region,
-		routing.NewFloodTable(maxDegree),
+		routing.NewFloodTable(config["degree"]),
 	)
 }
 
@@ -23,15 +23,16 @@ type FloodNet struct {
 	*BaseNetwork
 }
 
-func NewFloodNet(size int) *FloodNet {
-	maxDegree := 9
-	fmt.Println("degree:", maxDegree)
+func NewFloodNet(size, degree int) *FloodNet {
+	fmt.Println("degree:", degree)
 	// bootNode is used for message generation (from node) only here
-	bootNode := node.NewBasicNode(0, 0, 0, "", routing.NewFloodTable(maxDegree))
+	bootNode := node.NewBasicNode(0, 0, 0, "", nil)
 	net := NewBasicNetwork(bootNode)
-	net.generateNodes(size, NewFloodNode, maxDegree)
+	config := make(map[string]int)
+	config["degree"] = degree
+	net.generateNodes(size, NewFloodNode, config)
 	fNet := &FloodNet{
-		maxDegree,
+		degree,
 		net,
 	}
 	fNet.initConnections()

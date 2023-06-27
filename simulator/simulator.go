@@ -11,6 +11,12 @@ import (
 )
 
 type Simulator struct {
+	nMessage          int
+	logFactor         int
+	crashInterval     int
+	broadcastInterval int
+	lastCrashAt       int64
+
 	net            network.Network
 	sorter         *information.PacketSorter
 	progress       []*PacketStatistic // information
@@ -22,8 +28,14 @@ type Simulator struct {
 	sentCnt, confirmCnt int
 }
 
-func New(net network.Network) *Simulator {
+func New(net network.Network, nMessage, logFactor, crashInterval, broadcastInterval int) *Simulator {
 	return &Simulator{
+		nMessage,
+		logFactor,
+		crashInterval,
+		broadcastInterval,
+		0,
+
 		net,
 		information.NewInfoSorter(),
 		[]*PacketStatistic{},
@@ -41,8 +53,8 @@ func (s *Simulator) InitBroadcast() {
 	//m := s.net.NewPacketGeneration(0)
 	//heap.Push(s.sorter, m)
 	//s.progress = append(s.progress, NewPacketStatistic(m.To(), m.Timestamp()))
-	for i := 0; i < NMessage; i++ {
-		m := s.net.NewPacketGeneration(int64(PacketGenerationInterval * (i)))
+	for i := 0; i < s.nMessage; i++ {
+		m := s.net.NewPacketGeneration(int64(s.broadcastInterval * (i)))
 		heap.Push(s.sorter, m)
 		s.progress = append(s.progress, NewPacketStatistic(m.To(), m.Timestamp()))
 		//newPacketGeneration(net.BaseNetwork, sorter, &progress, int64(PacketGenerationInterval*(i)))
@@ -94,9 +106,9 @@ func (s *Simulator) Run() {
 		}
 		succeedingPackets = s.net.PacketReplacement(p)
 		// churn the network
-		if p.Timestamp()-lastCrashAt > CrashSpan {
-			lastCrashAt = p.Timestamp()
-			fmt.Println("t:", p.Timestamp(), "crashed:", s.net.Churn(CrashFrom))
+		if p.Timestamp()-s.lastCrashAt > int64(s.crashInterval) {
+			s.lastCrashAt = p.Timestamp()
+			fmt.Println("t:", p.Timestamp(), "crashed:", s.net.Churn(1))
 		}
 		for _, sp := range succeedingPackets {
 			heap.Push(s.sorter, sp)
@@ -108,7 +120,7 @@ func (s *Simulator) Run() {
 			s.coverageOutput[p.ID()]++
 			ps := s.progress[p.ID()]
 			ps.Received++
-			if ps.Received%RecordUnit == 0 {
+			if ps.Received%(s.net.Size()/5) == 0 {
 				ps.Timestamps[ps.Received] = p.Timestamp()
 			}
 			s.endAt = p.Timestamp()
@@ -131,8 +143,8 @@ func (s *Simulator) Statistic() {
 	delayOutput := output.NewDelayOutput()
 	fmt.Println("progress:")
 	for i, statistic := range s.progress {
-		delayOutput.Append(i, statistic.Delay(), statistic.From.Region())
-		if i%LogUnit != 0 {
+		delayOutput.Append(i, statistic.Delay(s.net.Size()), statistic.From.Region())
+		if i%s.logFactor != 0 {
 			continue
 		}
 		//fmt.Printf("packet %d start at %d delay=%d\n",
@@ -153,12 +165,12 @@ func (s *Simulator) Statistic() {
 		receivedCnt += nPackets
 		regionCount[s.net.Node(id).Region()]++
 		bandwidthCount[s.net.Node(id).UploadBandwidth()]++
-		if nPackets == NMessage {
+		if nPackets == s.nMessage {
 			receivedAll++
 		}
 	}
-	fmt.Printf("(%d/%d) received, %d packets totalSent (%d redundancy confirm packet)\n", receivedCnt, (NetSize)*NMessage, s.sentCnt, s.confirmCnt)
-	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", receivedAll, NetSize, NMessage, s.endAt)
+	fmt.Printf("(%d/%d) received, %d packets totalSent (%d redundancy confirm packet)\n", receivedCnt, (s.net.Size())*s.nMessage, s.sentCnt, s.confirmCnt)
+	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", receivedAll, s.net.Size(), s.nMessage, s.endAt)
 	fmt.Println("region distribution:", regionCount)
 	fmt.Println("upload bandwidth distribution:", bandwidthCount)
 	log.Print("end")

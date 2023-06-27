@@ -116,7 +116,7 @@ func (net *BaseNetwork) loadConf() {
 
 // generateNodes generate nodes by given newNode function, its region and bandwidth
 // is randomly assigned according to configuration files. And add the node into network
-func (net *BaseNetwork) generateNodes(n int, newNode func(int, int, string, int) node.Node, degree int) {
+func (net *BaseNetwork) generateNodes(n int, newNode func(int, int, string, map[string]int) node.Node, config map[string]int) {
 	rand.Seed(time.Now().Unix())
 	for i := 1; i <= n; i++ {
 		regionIndex := 0
@@ -142,7 +142,7 @@ func (net *BaseNetwork) generateNodes(n int, newNode func(int, int, string, int)
 			//net.downloadBandwidth[regionIndex],
 			net.uploadBandwidths[bandwidthIndex],
 			net.regions[regionIndex],
-			degree,
+			config,
 		)
 		net.Add(_node, i)
 	}

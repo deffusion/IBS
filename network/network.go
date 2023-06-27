@@ -17,7 +17,7 @@ func NewBasicPeerInfo(n node.Node) routing.PeerInfo {
 type Network interface {
 	BootNode() node.Node
 	Node(id uint64) node.Node
-	NodeID(id int) uint64
+	NodeID(i int) uint64
 	Connect(a, b node.Node, f NewPeerInfo) bool
 	Add(n node.Node, i int)
 	Size() int
