@@ -1,7 +1,6 @@
 package information
 
 import (
-	"IBS/network"
 	"IBS/node"
 	"fmt"
 )
@@ -10,22 +9,19 @@ type meta struct {
 	id        int
 	timestamp int64
 	dataSize  int // Byte
-	net       *network.Network
+	//net        *network.BasicNetwork
+	originNode node.Node
 }
 
 type Information struct {
 	*meta
-	originNode node.Node
-	relayNode  node.Node
+	relayNode node.Node
 }
 
 func (i *Information) ID() int {
 	return i.id
 }
 
-//func (i *Information) getTimestamp() int64 {
-//	return i.timestamp
-//}
 func (i *Information) DataSize() int {
 	return i.dataSize
 }

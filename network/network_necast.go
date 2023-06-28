@@ -1,6 +1,7 @@
 package network
 
 import (
+	"IBS/information"
 	"IBS/network/num_set"
 	"IBS/node"
 	"IBS/node/hash"
@@ -15,7 +16,7 @@ type NecastNet struct {
 func NewNecastPeerInfo(n node.Node) routing.PeerInfo {
 	return routing.NewNecastPeerInfo(n.Id())
 }
-func NewNecastNode(index int, uploadBandwidth int, region string, k int) node.Node {
+func NewNecastNode(index int, uploadBandwidth int, region string, config map[string]int) node.Node {
 	nodeID := hash.Hash64(uint64(index))
 	//nodeID := uint64(index)
 	return node.NewNeNode(
@@ -23,20 +24,22 @@ func NewNecastNode(index int, uploadBandwidth int, region string, k int) node.No
 		uploadBandwidth,
 		index,
 		region,
-		routing.NewNecastTable(nodeID, k, Beta),
+		routing.NewNecastTable(nodeID, config["k"], config["beta"]),
 	)
 }
 
-func NewNecastNet(size int) *NecastNet {
+func NewNecastNet(size, k, beta int) *NecastNet {
 	fmt.Println("===== ne-kademlia =====")
-	fmt.Println("beta:", Beta, "bucket size:", K)
+	fmt.Println("beta:", beta, "bucket size:", k)
 	// bootNode is used for message generation (from node) only here
-	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", routing.NewNecastTable(BootNodeID, K, Beta))
-	net := NewNetwork(bootNode)
-	net.generateNodes(size, NewNecastNode, K)
+	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", nil)
+	net := NewBasicNetwork(bootNode)
+	config := map[string]int{"k": k, "beta": beta}
+	net.generateNodes(size, NewNecastNode, config)
 	nNet := &NecastNet{
 		&KadcastNet{
-			K,
+			k,
+			beta,
 			net,
 			num_set.NewSet(),
 		},
@@ -46,12 +49,14 @@ func NewNecastNet(size int) *NecastNet {
 }
 
 func (nNet *NecastNet) Churn(crashFrom int) int {
-	for _, n := range nNet.Nodes {
-		if n.Running() == false {
-			n.ResetRoutingTable(routing.NewNecastTable(n.Id(), K, Beta))
-			n.Run()
-			nNet.introduceAndConnect(n, NewNecastPeerInfo)
-		}
+	return nNet.churn(crashFrom, routing.NewNecastTable)
+}
+
+func (nNet *NecastNet) PacketReplacement(p *information.BasicPacket) information.Packets {
+	packets := nNet.BaseNetwork.PacketReplacement(p)
+	neNode := p.To().(*node.NeNode)
+	if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
+		packets = append(packets, p.ConfirmPacket())
 	}
-	return nNet.NodeCrash(crashFrom)
+	return packets
 }

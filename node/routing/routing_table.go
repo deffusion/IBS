@@ -74,7 +74,6 @@ type NecastPeerInfo struct {
 	newMsg               int
 	confirmation         int
 	receivedConfirmation int
-	delay                int32
 }
 
 func NewNecastPeerInfo(id uint64) *NecastPeerInfo {
@@ -83,11 +82,7 @@ func NewNecastPeerInfo(id uint64) *NecastPeerInfo {
 		0,
 		0,
 		1,
-		1,
 	}
-}
-func (n *NecastPeerInfo) SetDelay(delay int32) {
-	//n.delay = 1
 }
 func (n *NecastPeerInfo) NewMsg() {
 	n.newMsg += 100

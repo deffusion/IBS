@@ -9,7 +9,7 @@ type NeCastTable struct {
 	KadcastTable
 }
 
-func NewNecastTable(nodeID uint64, k, beta int) *NeCastTable {
+func NewNecastTable(nodeID uint64, k, beta int) Table {
 	return &NeCastTable{
 		KadcastTable{
 			NewKademlia(nodeID, k),

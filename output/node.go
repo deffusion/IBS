@@ -32,8 +32,8 @@ func newNode(n node.Node) *Node {
 
 type NodeOutput []*Node
 
-func NewNodeOutput() *NodeOutput {
-	return &NodeOutput{}
+func NewNodeOutput() NodeOutput {
+	return NodeOutput{}
 }
 
 func (o *NodeOutput) Append(n node.Node) {

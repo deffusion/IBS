@@ -1,6 +1,8 @@
 package main
 
-import "IBS/node"
+import (
+	"IBS/node"
+)
 
 type PacketStatistic struct {
 	From       node.Node
@@ -9,15 +11,15 @@ type PacketStatistic struct {
 	Timestamps map[int]int64
 }
 
-func NewPacketStatistic(from node.Node) *PacketStatistic {
+func NewPacketStatistic(from node.Node, timestamp int64) *PacketStatistic {
 	return &PacketStatistic{
 		from,
 		0,
 		0,
-		map[int]int64{},
+		map[int]int64{0: timestamp},
 	}
 }
 
-func (ps *PacketStatistic) Delay() int {
-	return int(ps.Timestamps[NetSize] - ps.Timestamps[0])
+func (ps *PacketStatistic) Delay(last int) int {
+	return int(ps.Timestamps[last] - ps.Timestamps[0])
 }

@@ -2,37 +2,37 @@ package network
 
 import (
 	"IBS/node"
-	"IBS/node/hash"
 	"IBS/node/routing"
 	"fmt"
 	"math/rand"
 )
 
-func NewFloodNode(id int, uploadBandwidth int, region string, maxDegree int) node.Node {
+func NewFloodNode(id int, uploadBandwidth int, region string, config map[string]int) node.Node {
 	return node.NewBasicNode(
-		//uint64(id),
-		hash.Hash64(uint64(id)),
+		uint64(id),
+		//hash.Hash64(uint64(id)),
 		uploadBandwidth,
 		id,
 		region,
-		routing.NewFloodTable(maxDegree),
+		routing.NewFloodTable(config["degree"]),
 	)
 }
 
 type FloodNet struct {
-	MaxDgree int
-	*Network
+	MaxDegree int
+	*BaseNetwork
 }
 
-func NewFloodNet(size int) *FloodNet {
-	maxDegree := 15
-	fmt.Println("degree:", maxDegree)
+func NewFloodNet(size, degree int) *FloodNet {
+	fmt.Println("degree:", degree)
 	// bootNode is used for message generation (from node) only here
-	bootNode := node.NewBasicNode(0, 0, 0, "", routing.NewFloodTable(maxDegree))
-	net := NewNetwork(bootNode)
-	net.generateNodes(size, NewFloodNode, maxDegree)
+	bootNode := node.NewBasicNode(0, 0, 0, "", nil)
+	net := NewBasicNetwork(bootNode)
+	config := make(map[string]int)
+	config["degree"] = degree
+	net.generateNodes(size, NewFloodNode, config)
 	fNet := &FloodNet{
-		maxDegree,
+		degree,
 		net,
 	}
 	fNet.initConnections()
@@ -43,7 +43,7 @@ func NewFloodNet(size int) *FloodNet {
 func (fNet *FloodNet) Introduce(n int) []node.Node {
 	var nodes []node.Node
 	for i := 0; i < n; i++ {
-		r := rand.Intn(fNet.Size()) + 1 // zero is the msg generator
+		r := rand.Intn(fNet.Size()) + 1 // zero is the index of msg generator
 		//fmt.Println("r", r)
 		nodes = append(nodes, fNet.Node(fNet.NodeID(r)))
 	}
@@ -56,8 +56,8 @@ func (fNet *FloodNet) initConnections() {
 		//cnt := 0
 		//fNet.bootNode.AddPeer(NewBasicPeerInfo(node))
 		connectCount := node.RoutingTableLength()
-		//cnts = append(cnts, fNet.MaxDgree-connectCount)
-		peers := fNet.Introduce(fNet.MaxDgree - connectCount)
+		//cnts = append(cnts, fNet.MaxDegree-connectCount)
+		peers := fNet.Introduce(fNet.MaxDegree - connectCount)
 		for _, peer := range peers {
 			if fNet.Connect(node, peer, NewBasicPeerInfo) == true {
 				//cnt++
@@ -66,4 +66,9 @@ func (fNet *FloodNet) initConnections() {
 		//cnts = append(cnts, cnt)
 	}
 	//fmt.Println("connect count: ", cnts)
+}
+
+func (fNet FloodNet) Churn(int) int {
+	// TODO: crash nodes in flood net
+	return 0
 }

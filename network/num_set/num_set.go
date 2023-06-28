@@ -24,6 +24,7 @@ func (t *Set) Insert(num uint64) bool {
 	return true
 }
 
+// TODO: use bin-search
 func (t *Set) locate(num uint64) int {
 	for i := len(t.s) - 1; i >= 0; i-- {
 		if t.s[i] <= num {
@@ -46,7 +47,7 @@ func (t *Set) locate(num uint64) int {
 	//return left - 1
 }
 
-// Around n number around
+// Around : n numbers around num
 func (t *Set) Around(num uint64, n int) []uint64 {
 	pos := t.locate(num)
 	//fmt.Println("locate", num, "at", pos)
