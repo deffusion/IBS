@@ -19,7 +19,7 @@ type Simulator struct {
 
 	net            network.Network
 	sorter         *information.PacketSorter
-	progress       []*PacketStatistic // information
+	progress       []*MessageRec // information
 	NodeOutput     output.NodeOutput
 	coverageOutput output.PacketCoverageOutput
 	delayOutput    output.DelayOutput
@@ -38,7 +38,7 @@ func New(net network.Network, nMessage, logFactor, crashInterval, broadcastInter
 
 		net,
 		information.NewInfoSorter(),
-		[]*PacketStatistic{},
+		[]*MessageRec{},
 		output.NewNodeOutput(),
 		output.NewCoverageOutput(),
 		output.NewDelayOutput(),

@@ -4,15 +4,15 @@ import (
 	"IBS/node"
 )
 
-type PacketStatistic struct {
+type MessageRec struct {
 	From       node.Node
 	Received   int
 	MaxHop     int
 	Timestamps map[int]int64
 }
 
-func NewPacketStatistic(from node.Node, timestamp int64) *PacketStatistic {
-	return &PacketStatistic{
+func NewPacketStatistic(from node.Node, timestamp int64) *MessageRec {
+	return &MessageRec{
 		from,
 		0,
 		0,
@@ -20,6 +20,6 @@ func NewPacketStatistic(from node.Node, timestamp int64) *PacketStatistic {
 	}
 }
 
-func (ps *PacketStatistic) Delay(last int) int {
+func (ps *MessageRec) Delay(last int) int {
 	return int(ps.Timestamps[last] - ps.Timestamps[0])
 }
