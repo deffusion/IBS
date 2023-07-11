@@ -81,17 +81,17 @@ func NewNecastPeerInfo(id uint64) *NecastPeerInfo {
 		NewBasicPeerInfo(id),
 		0,
 		0,
-		1,
+		0,
 	}
 }
 func (n *NecastPeerInfo) NewMsg() {
-	n.newMsg += 100
+	n.newMsg += 1
 }
 func (n *NecastPeerInfo) Confirmation() {
-	n.confirmation += 100
+	n.confirmation += 1
 }
 func (n *NecastPeerInfo) ReceivedConfirmation() {
-	n.receivedConfirmation += 100
+	n.receivedConfirmation += 1
 }
 func (n *NecastPeerInfo) Score() float64 {
 	return float64(n.newMsg + n.confirmation + n.receivedConfirmation)

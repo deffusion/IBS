@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"os"
 	"sort"
 	"time"
 )
@@ -70,7 +71,7 @@ func NewBasicNetwork(bootNode node.Node) *BaseNetwork {
 
 func (net *BaseNetwork) loadConf() {
 	// DelayOfRegions
-	delay, err := ioutil.ReadFile("conf/delay.json")
+	delay, err := os.ReadFile("conf/delay.json")
 	if err != nil {
 		panic(err)
 	}
@@ -98,7 +99,7 @@ func (net *BaseNetwork) loadConf() {
 
 	// bandwidth
 	var bandwidths []Bandwidth
-	bandwidth, err := ioutil.ReadFile("conf/bandwidth.json")
+	bandwidth, err := os.ReadFile("conf/bandwidth.json")
 	if err != nil {
 		panic(err)
 	}
@@ -117,10 +118,10 @@ func (net *BaseNetwork) loadConf() {
 // generateNodes generate nodes by given newNode function, its region and bandwidth
 // is randomly assigned according to configuration files. And add the node into network
 func (net *BaseNetwork) generateNodes(n int, newNode func(int, int, string, map[string]int) node.Node, config map[string]int) {
-	rand.Seed(time.Now().Unix())
+	rd := rand.New(rand.NewSource(time.Now().Unix()))
 	for i := 1; i <= n; i++ {
 		regionIndex := 0
-		r := rand.Float32()
+		r := rd.Float32()
 		acc := float32(0)
 		for index, f := range net.nodeDistribution {
 			if r > acc && r < acc+f {
@@ -129,7 +130,7 @@ func (net *BaseNetwork) generateNodes(n int, newNode func(int, int, string, map[
 			acc += f
 		}
 		bandwidthIndex := 0
-		r = rand.Float32()
+		r = rd.Float32()
 		acc = float32(0)
 		for index, f := range net.uploadBandwidthDistribution {
 			if r > acc && r < acc+f {
@@ -199,13 +200,14 @@ func (net *BaseNetwork) NewPacketGeneration(timestamp int64) information.Packet 
 		}
 	}
 	p := information.NewBasicPacket(net.lastPacketIndex, 1<<7, origin, net.BootNode(), origin, nil, timestamp)
+	// fmt.Printf("node index: %d, timestamp: %d\n", net.lastOriginNodeIndex, timestamp)
 	net.lastPacketIndex++
 	return p
 }
 
 // NodeCrash makes nodes from i to netSize offline (according to correspond nodes)
 func (net *BaseNetwork) NodeCrash(i int) int {
-	rand.Seed(time.Now().UnixMilli())
+	rd := rand.New(rand.NewSource(time.Now().Unix()))
 	cnt := 0
 	if i < 1 {
 		i = 1
@@ -213,7 +215,7 @@ func (net *BaseNetwork) NodeCrash(i int) int {
 	for ; i <= net.Size(); i++ {
 		id := net.NodeID(i)
 		n := net.Node(id)
-		r := rand.Intn(net.Size())
+		r := rd.Intn(net.Size())
 		if n.CrashFactor() >= r {
 			cnt++
 			n.Stop()
@@ -224,7 +226,7 @@ func (net *BaseNetwork) NodeCrash(i int) int {
 
 // NodeInfest makes nodes from i to netSize refuse to relay messages
 func (net *BaseNetwork) NodeInfest(i int) int {
-	rand.Seed(time.Now().UnixMilli())
+	rd := rand.New(rand.NewSource(time.Now().Unix()))
 	cnt := 0
 	if i < 1 {
 		i = 1
@@ -232,7 +234,7 @@ func (net *BaseNetwork) NodeInfest(i int) int {
 	for ; i <= net.Size(); i++ {
 		id := net.NodeID(i)
 		n := net.Node(id)
-		r := rand.Intn(net.Size())
+		r := rd.Intn(net.Size())
 		if n.CrashFactor() >= r {
 			cnt++
 			n.Infest()
@@ -247,10 +249,10 @@ func (net *BaseNetwork) succeedingPackets(p *information.BasicPacket, IDs *[]uin
 	if sender.Running() == false {
 		return packets
 	}
-	if sender.Malicious() == true {
-		p.SetRedundancy(true)
-		return packets
-	}
+	//if sender.Malicious() == true {
+	//	p.SetRedundancy(true)
+	//	return packets
+	//}
 	receivedAt := p.Timestamp()
 	received := sender.Received(p.ID(), p.Timestamp())
 	if received == true {
@@ -260,6 +262,9 @@ func (net *BaseNetwork) succeedingPackets(p *information.BasicPacket, IDs *[]uin
 	}
 	switch sender.(type) {
 	case *node.NeNode:
+		if p.From().Malicious() == true {
+			fmt.Println("new msg from malicious node")
+		}
 		sender.(*node.NeNode).NewMsg(p.From().Id())
 	}
 	//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
@@ -305,18 +310,30 @@ func (net *BaseNetwork) succeedingPackets(p *information.BasicPacket, IDs *[]uin
 	return packets
 }
 
+//	func (net *BaseNetwork) PacketReplacement(p *information.BasicPacket) (information.Packets, int, int) {
+//		malicious, total := 0, 0
 func (net *BaseNetwork) PacketReplacement(p *information.BasicPacket) information.Packets {
 	var peers = p.To().PeersToBroadCast(p.From())
 	crashCnt := 0
+	var n node.Node
 	for i, peerID := range peers {
 		peers[i-crashCnt] = peers[i]
-		if net.Node(peerID).Running() == false {
+		n = net.Node(peerID)
+		if n.Running() == false {
 			p.To().RemovePeer(peerID)
 			crashCnt++
 		}
+		//if n.Malicious() {
+		//	malicious++
+		//}
+		//total++
 	}
 	peers = peers[:len(peers)-crashCnt]
+	//if total > 10 {
+	//fmt.Printf("total:%d, malicious:%d\n", total, malicious)
+	//}
 
+	//return net.succeedingPackets(p, &peers), malicious, total
 	return net.succeedingPackets(p, &peers)
 }
 

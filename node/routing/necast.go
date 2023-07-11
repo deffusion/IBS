@@ -55,6 +55,7 @@ func (t *NeCastTable) necastPeerInfo(ID uint64) *NecastPeerInfo {
 }
 
 func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
+	var randomPeers []uint64
 	//if n > len(peers) {
 	//	n = len(peers)
 	//}
@@ -66,22 +67,34 @@ func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
 	//	scores = append(scores, peer.Score())
 	//	totalScore += peer.Score()
 	//}
+	//m := map[uint64]PeerInfo{}
 	l := len(peers)
+	if l == 0 {
+		return randomPeers
+	}
 	if n > l {
 		n = l
 	}
 	totalScore := float64(0)
-	var scores []float64
-	var peerIDS []uint64
+	scores := make([]float64, 0, len(peers))
+	peerIDS := make([]uint64, 0, len(peers))
+	//selectTimes := make([]int64, 0, len(peers))
+	//oriScores := make([]float64, 0, len(peers))
 	R := int(math.Floor(math.Log2(float64(l))))
 	for i, peer := range peers {
+		//m[peer.PeerID()] = peer
 		r := int(math.Floor(math.Log2(float64(i + 1))))
 		peerIDS = append(peerIDS, peer.PeerID())
+		//selectTimes = append(selectTimes, peer.LastSeen())
+		//oriScores = append(oriScores, peer.Score())
 		score := 1 << (R - r)
 		scores = append(scores, float64(score))
 		totalScore += float64(score)
 	}
-	var randomPeers []uint64
+	//fmt.Println("peerIDS:", peerIDS)
+	//fmt.Println("scores:", scores)
+	//fmt.Println("ori scores:", oriScores)
+	//fmt.Println("selectTimes:", selectTimes)
 	for n > 0 {
 		n--
 		nextIndex := 0
@@ -95,6 +108,7 @@ func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
 			acc += s / totalScore
 		}
 		randomPeers = append(randomPeers, peerIDS[nextIndex])
+		//m[peerIDS[nextIndex]].SetLastSeen(m[peerIDS[nextIndex]].LastSeen() + 1) // inappropriate trick usage: record selection times
 		totalScore -= scores[nextIndex]
 		for i := nextIndex; i < len(scores)-1; i++ {
 			peerIDS[i] = peerIDS[i+1]
@@ -103,6 +117,8 @@ func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
 		scores = scores[:len(scores)-1]
 		peerIDS = peerIDS[:len(peerIDS)-1]
 	}
+
+	//fmt.Println("random peers:", randomPeers)
 	return randomPeers
 }
 

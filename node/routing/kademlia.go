@@ -25,18 +25,18 @@ func NewKademlia(nodeID uint64, k int) *kademlia {
 
 func fakeIDForBucket(num uint64, b int) uint64 {
 	var base uint64 = 1 << b
-	rand.Seed(time.Now().Unix())
-	if b == 63 {
+	rd := rand.New(rand.NewSource(time.Now().Unix()))
+	if b == KeySpaceBits-1 {
 		// random 63bit positive number
-		r := uint64(rand.Int63n(62))<<1 + uint64(rand.Intn(2))
+		r := uint64(rd.Int63n(KeySpaceBits-2))<<1 + uint64(rd.Intn(2))
 		return num ^ (base + r)
 	}
-	return num ^ (uint64(rand.Int63n(int64(base))) + base)
+	return num ^ (uint64(rd.Int63n(int64(base))) + base)
 }
 
 func FakeIDForBucket(nodeID uint64, b int) (uint64, error) {
 	b = KeySpaceBits - 1 - b
-	if b < 0 || b > 63 {
+	if b < 0 || b > KeySpaceBits-1 {
 		return nodeID, errors.New("FakeIDForBucket: out of range")
 	}
 	if b == 0 {

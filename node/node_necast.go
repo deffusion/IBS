@@ -27,7 +27,7 @@ func (n *NeNode) NewMsg(peerID uint64) {
 func (n *NeNode) Confirmation(peerID, relayID uint64) {
 	table := n.routingTable.(*routing.NeCastTable)
 	table.IncrementConfirmation(peerID)
-	table.IncrementReceivedConfirmation(peerID)
+	table.IncrementReceivedConfirmation(relayID)
 }
 
 //func (n *NeNode) SortPeers() {

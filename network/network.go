@@ -25,6 +25,7 @@ type Network interface {
 	NodeInfest(i int) int
 	NewPacketGeneration(timestamp int64) information.Packet
 	succeedingPackets(p *information.BasicPacket, IDs *[]uint64) information.Packets
+	//PacketReplacement(p *information.BasicPacket) (information.Packets, int, int)
 	PacketReplacement(p *information.BasicPacket) information.Packets
 	Churn(crashFrom int) int
 	OutputNodes()

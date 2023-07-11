@@ -18,7 +18,6 @@ func NewNecastPeerInfo(n node.Node) routing.PeerInfo {
 }
 func NewNecastNode(index int, uploadBandwidth int, region string, config map[string]int) node.Node {
 	nodeID := hash.Hash64(uint64(index))
-	//nodeID := uint64(index)
 	return node.NewNeNode(
 		nodeID,
 		uploadBandwidth,
@@ -52,6 +51,8 @@ func (nNet *NecastNet) Churn(crashFrom int) int {
 	return nNet.churn(crashFrom, routing.NewNecastTable)
 }
 
+//	func (nNet *NecastNet) PacketReplacement(p *information.BasicPacket) (information.Packets, int, int) {
+//		packets, malicious, total := nNet.BaseNetwork.PacketReplacement(p)
 func (nNet *NecastNet) PacketReplacement(p *information.BasicPacket) information.Packets {
 	packets := nNet.BaseNetwork.PacketReplacement(p)
 	neNode := p.To().(*node.NeNode)

@@ -16,6 +16,7 @@ type Simulator struct {
 	crashInterval     int
 	broadcastInterval int
 	lastCrashAt       int64
+	broadcastID       int
 
 	net            network.Network
 	sorter         *information.PacketSorter
@@ -35,6 +36,7 @@ func New(net network.Network, nMessage, logFactor, crashInterval, broadcastInter
 		crashInterval,
 		broadcastInterval,
 		0,
+		0,
 
 		net,
 		information.NewInfoSorter(),
@@ -49,27 +51,40 @@ func New(net network.Network, nMessage, logFactor, crashInterval, broadcastInter
 	}
 }
 
-func (s *Simulator) InitBroadcast() {
+func (s *Simulator) initAllBroadcast() {
 	//m := s.net.NewPacketGeneration(0)
 	//heap.Push(s.sorter, m)
 	//s.progress = append(s.progress, NewPacketStatistic(m.To(), m.Timestamp()))
-	for i := 0; i < s.nMessage; i++ {
-		m := s.net.NewPacketGeneration(int64(s.broadcastInterval * (i)))
-		heap.Push(s.sorter, m)
-		s.progress = append(s.progress, NewPacketStatistic(m.To(), m.Timestamp()))
+	for s.broadcastID < s.nMessage {
+		s.initOneBroadcast()
 		//newPacketGeneration(net.BaseNetwork, sorter, &progress, int64(PacketGenerationInterval*(i)))
 	}
 }
 
+func (s *Simulator) initOneBroadcast() {
+	m := s.net.NewPacketGeneration(int64(s.broadcastInterval * (s.broadcastID)))
+	s.broadcastID++
+	heap.Push(s.sorter, m)
+	s.progress = append(s.progress, NewPacketStatistic(m.To(), m.Timestamp()))
+}
+
 // Run the packet replacement process until no packet remains in the sorter
-func (s *Simulator) Run() {
+func (s *Simulator) Run(initAllBroadcast bool) {
+	if initAllBroadcast {
+		s.initAllBroadcast()
+	} else {
+		s.initOneBroadcast()
+	}
 	//tFinish := int64(0)
 	//outputPackets := output.NewPacketOutput()
 	//var outputs []*output.Packet
-	fmt.Println("=======len", s.sorter.Len())
-
+	var p *information.BasicPacket
+	var sender node.Node
+	//malitrans := 0
+	//malicious, total := 0, 0
 	for s.sorter.Len() > 0 {
-		p := heap.Pop(s.sorter).(*information.BasicPacket)
+		p = heap.Pop(s.sorter).(*information.BasicPacket)
+		sender = p.To()
 		//sorter.Take()
 		//switch p.(type) {
 		//case *information.TimerPacket:
@@ -79,42 +94,48 @@ func (s *Simulator) Run() {
 		//		sorter.Append(packet)
 		//	}
 		//case *information.BasicPacket:
-		if p.To().Running() == false {
+		if sender.Running() == false {
 			continue
 		}
-		if p.To().Malicious() == true {
+		s.sentCnt++
+		if sender.Malicious() == true {
+			//malitrans++
 			continue
 		}
 		//packet := p.(*information.BasicPacket)
 		var succeedingPackets information.Packets
-		switch p.To().(type) {
+		switch dNode := sender.(type) {
 		case *node.NeNode:
-			neNode := p.To().(*node.NeNode)
 			// the sender will be added if the receiver's bucket have space for it
 			if p.From().Id() != network.BootNodeID {
-				neNode.AddPeer(network.NewNecastPeerInfo(p.From()))
+				dNode.AddPeer(network.NewNecastPeerInfo(p.From()))
 			}
 			// if the packet is sent by this node
-			if p.Origin().Id() == neNode.Id() && p.From().Id() != network.BootNodeID {
+			if p.Origin().Id() == dNode.Id() && p.From().Id() != network.BootNodeID {
 				s.confirmCnt++
-				neNode.Confirmation(p.From().Id(), p.Relay().Id())
+				dNode.Confirmation(p.From().Id(), p.Relay().Id())
 			}
 		default:
 			if p.From().Id() != network.BootNodeID {
-				p.To().AddPeer(network.NewBasicPeerInfo(p.From()))
+				sender.AddPeer(network.NewBasicPeerInfo(p.From()))
 			}
 		}
 		succeedingPackets = s.net.PacketReplacement(p)
+		//succeedingPackets, m, t := s.net.PacketReplacement(p)
+		//malicious += m
+		//total += t
 		// churn the network
 		if p.Timestamp()-s.lastCrashAt > int64(s.crashInterval) {
 			s.lastCrashAt = p.Timestamp()
 			fmt.Println("t:", p.Timestamp(), "crashed:", s.net.Churn(1))
 		}
+		if !initAllBroadcast && p.Timestamp() > int64(s.broadcastID*s.broadcastInterval) && s.broadcastID < s.nMessage {
+			s.initOneBroadcast()
+		}
 		for _, sp := range succeedingPackets {
 			heap.Push(s.sorter, sp)
 		}
 
-		s.sentCnt++
 		//outputs = append(outputs, output.NewPacket(packet))
 		if p.Redundancy() == false {
 			s.coverageOutput[p.ID()]++
@@ -134,16 +155,18 @@ func (s *Simulator) Run() {
 		//outputPackets.Append(packet)
 
 	}
+	//fmt.Printf("%d/%d\n", malicious, total)
+	//fmt.Println("malicious transmission", malitrans)
 	//output.WritePackets(outputs)
 	//outputPackets.WritePackets()
 
 }
 
 func (s *Simulator) Statistic() {
-	delayOutput := output.NewDelayOutput()
+	s.delayOutput = output.NewDelayOutput()
 	fmt.Println("progress:")
 	for i, statistic := range s.progress {
-		delayOutput.Append(i, statistic.Delay(s.net.Size()), statistic.From.Region())
+		s.delayOutput.Append(i, statistic.Delay(s.net.Size()), statistic.From.Region())
 		if i%s.logFactor != 0 {
 			continue
 		}
@@ -151,25 +174,30 @@ func (s *Simulator) Statistic() {
 		//	i, statistic.Timestamps[0], statistic.Delay())
 		fmt.Printf("packet %d coverage:(%d) \n", i, statistic.Received)
 	}
-	delayOutput.WriteDelay()
+	s.delayOutput.WriteDelay()
 
 	receivedAll := 0
 	receivedCnt := 0
 	regionCount := map[string]int{}
+	var n node.Node
 	bandwidthCount := map[int]int{}
 	for i := 1; i <= s.net.Size(); i++ {
 		id := s.net.NodeID(i)
 		//id := uint64(i)
 		//net.Node(id).PrintTable()
-		nPackets := s.net.Node(id).NumReceivedPackets()
-		receivedCnt += nPackets
-		regionCount[s.net.Node(id).Region()]++
-		bandwidthCount[s.net.Node(id).UploadBandwidth()]++
+		n = s.net.Node(id)
+		nPackets := n.NumReceivedPackets()
+		//receivedCnt += nPackets
+		regionCount[n.Region()]++
+		bandwidthCount[n.UploadBandwidth()]++
 		if nPackets == s.nMessage {
 			receivedAll++
 		}
 	}
-	fmt.Printf("(%d/%d) received, %d packets totalSent (%d redundancy confirm packet)\n", receivedCnt, (s.net.Size())*s.nMessage, s.sentCnt, s.confirmCnt)
+	for _, cnt := range s.coverageOutput {
+		receivedCnt += cnt
+	}
+	fmt.Printf("%d received, %d packets totalSent (%d redundancy confirm packet)\n", receivedCnt, s.sentCnt, s.confirmCnt)
 	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", receivedAll, s.net.Size(), s.nMessage, s.endAt)
 	fmt.Println("region distribution:", regionCount)
 	fmt.Println("upload bandwidth distribution:", bandwidthCount)
