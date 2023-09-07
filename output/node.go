@@ -40,12 +40,13 @@ func (o *NodeOutput) Append(n node.Node) {
 	*o = append(*o, newNode(n))
 }
 
-func (o *NodeOutput) WriteNodes() {
+func (o *NodeOutput) WriteNodes(folder string) {
 	b, err := json.Marshal(o)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = ioutil.WriteFile("output/output_nodes.json", b, 0777)
+	filename := fmt.Sprintf("%s/output_nodes.json", folder)
+	err = ioutil.WriteFile(filename, b, 0777)
 	if err != nil {
 		fmt.Println(err)
 	}

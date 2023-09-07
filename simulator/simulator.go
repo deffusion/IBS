@@ -1,4 +1,4 @@
-package main
+package simulator
 
 import (
 	"container/heap"
@@ -7,7 +7,6 @@ import (
 	"github.com/deffusion/IBS/network"
 	"github.com/deffusion/IBS/node"
 	"github.com/deffusion/IBS/output"
-	"log"
 )
 
 type Simulator struct {
@@ -23,7 +22,7 @@ type Simulator struct {
 	progress       []*MessageRec // information
 	NodeOutput     output.NodeOutput
 	coverageOutput output.PacketCoverageOutput
-	delayOutput    output.DelayOutput
+	latencyOutput  output.LatencyOutput
 
 	endAt               int64
 	sentCnt, confirmCnt int
@@ -43,7 +42,7 @@ func New(net network.Network, nMessage, logFactor, crashInterval, broadcastInter
 		[]*MessageRec{},
 		output.NewNodeOutput(),
 		output.NewCoverageOutput(),
-		output.NewDelayOutput(),
+		output.NewLatencyOutput(),
 
 		0,
 		0,
@@ -162,19 +161,20 @@ func (s *Simulator) Run(initAllBroadcast bool) {
 
 }
 
-func (s *Simulator) Statistic() {
-	s.delayOutput = output.NewDelayOutput()
-	fmt.Println("progress:")
+func (s *Simulator) Statistic() string {
+	outputText := ""
+	s.latencyOutput = output.NewLatencyOutput()
+	//fmt.Println("progress:")
 	for i, statistic := range s.progress {
-		s.delayOutput.Append(i, statistic.Delay(s.net.Size()), statistic.From.Region())
+		s.latencyOutput.Append(i, statistic.Delay(s.net.Size()), statistic.From.Region())
 		if i%s.logFactor != 0 {
 			continue
 		}
 		//fmt.Printf("packet %d start at %d delay=%d\n",
 		//	i, statistic.Timestamps[0], statistic.Delay())
-		fmt.Printf("packet %d coverage:(%d) \n", i, statistic.Received)
+		//fmt.Printf("packet %d coverage:(%d) \n", i, statistic.Received)
 	}
-	s.delayOutput.WriteDelay()
+	//s.latencyOutput.WriteLatency()
 
 	receivedAll := 0
 	receivedCnt := 0
@@ -197,15 +197,34 @@ func (s *Simulator) Statistic() {
 	for _, cnt := range s.coverageOutput {
 		receivedCnt += cnt
 	}
-	fmt.Printf("%d received, %d packets totalSent (%d redundancy confirm packet)\n", receivedCnt, s.sentCnt, s.confirmCnt)
-	fmt.Printf("%d/%d nodes received %d packet in %d μs\n", receivedAll, s.net.Size(), s.nMessage, s.endAt)
-	fmt.Println("region distribution:", regionCount)
-	fmt.Println("upload bandwidth distribution:", bandwidthCount)
-	log.Print("end")
-	s.coverageOutput.WriteCoverage()
-	s.net.OutputNodes()
+	outputText += fmt.Sprintf("%d received, %d packets totalSent (%d redundancy confirm packet)\n", receivedCnt, s.sentCnt, s.confirmCnt)
+	outputText += fmt.Sprintf("%d/%d nodes received %d packet in %d μs\n", receivedAll, s.net.Size(), s.nMessage, s.endAt)
+	outputText += fmt.Sprintf("region distribution:%v\n", regionCount)
+	outputText += fmt.Sprintf("upload bandwidth distribution:%v\n", bandwidthCount)
+	return outputText
+	//fmt.Printf("%d received, %d packets totalSent (%d redundancy confirm packet)\n", receivedCnt, s.sentCnt, s.confirmCnt)
+	//fmt.Printf("%d/%d nodes received %d packet in %d μs\n", receivedAll, s.net.Size(), s.nMessage, s.endAt)
+	//fmt.Println("region distribution:", regionCount)
+	//fmt.Println("upload bandwidth distribution:", bandwidthCount)
+	//log.Print("end")
+	//s.coverageOutput.WriteCoverage()
+	//s.net.OutputNodes()
 
 	//for i, progress := range s.progress {
 	//	fmt.Println(i, *progress)
 	//}
 }
+
+func (s *Simulator) OutputCoverage(folder string) {
+	s.coverageOutput.WriteCoverage(folder)
+}
+func (s *Simulator) OutputLatency(folder string) {
+	s.latencyOutput.WriteLatency(folder)
+}
+func (s *Simulator) OutputNodes(folder string) {
+	s.net.OutputNodes(folder)
+}
+
+//func (s Simulator) OutputPackets()  {
+//
+//}

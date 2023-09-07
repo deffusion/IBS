@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	"github.com/deffusion/IBS/network/num_set"
 	"github.com/deffusion/IBS/node"
 	"github.com/deffusion/IBS/node/hash"
@@ -27,8 +26,8 @@ func NewKadcastNode(index int, uploadBandwidth int, region string, config map[st
 	)
 }
 func NewKadcastNet(size, k, beta int) *KadcastNet {
-	fmt.Println("===== kademlia =====")
-	fmt.Println("beta:", beta, "bucket size:", k)
+	//fmt.Println("===== kademlia =====")
+	//fmt.Println("beta:", beta, "bucket size:", k)
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", nil)
 	net := NewBasicNetwork(bootNode)

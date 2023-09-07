@@ -111,8 +111,6 @@ func (net *BaseNetwork) loadConf() {
 		net.uploadBandwidthDistribution = append(net.uploadBandwidthDistribution, b.Distribution)
 		net.uploadBandwidths = append(net.uploadBandwidths, 1<<b.UploadBandwidth)
 	}
-
-	fmt.Println("upload bandwidth:", net.uploadBandwidths)
 }
 
 // generateNodes generate nodes by given newNode function, its region and bandwidth
@@ -337,11 +335,11 @@ func (net *BaseNetwork) PacketReplacement(p *information.BasicPacket) informatio
 	return net.succeedingPackets(p, &peers)
 }
 
-func (net *BaseNetwork) OutputNodes() {
+func (net *BaseNetwork) OutputNodes(folder string) {
 	outputNodes := output.NewNodeOutput()
 	for _, n := range net.Nodes {
 		//n.PrintTable()
 		outputNodes.Append(n)
 	}
-	outputNodes.WriteNodes()
+	outputNodes.WriteNodes(folder)
 }

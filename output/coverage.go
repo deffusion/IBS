@@ -11,7 +11,7 @@ type PacketCoverageOutput map[int]int // packetID -> received
 func NewCoverageOutput() PacketCoverageOutput {
 	return make(PacketCoverageOutput)
 }
-func (o *PacketCoverageOutput) WriteCoverage() {
+func (o *PacketCoverageOutput) WriteCoverage(folder string) {
 	var outputs [2][]int
 	for id, received := range *o {
 		outputs[0] = append(outputs[0], id)
@@ -21,7 +21,8 @@ func (o *PacketCoverageOutput) WriteCoverage() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = ioutil.WriteFile("output/output_coverage.json", b, 0777)
+	fileName := fmt.Sprintf("%s/output_coverage.json", folder)
+	err = ioutil.WriteFile(fileName, b, 0777)
 	if err != nil {
 		fmt.Println(err)
 	}

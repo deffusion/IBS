@@ -28,5 +28,5 @@ type Network interface {
 	//PacketReplacement(p *information.BasicPacket) (information.Packets, int, int)
 	PacketReplacement(p *information.BasicPacket) information.Packets
 	Churn(crashFrom int) int
-	OutputNodes()
+	OutputNodes(string)
 }
