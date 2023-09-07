@@ -1,11 +1,11 @@
 package network
 
 import (
-	"IBS/network/num_set"
-	"IBS/node"
-	"IBS/node/hash"
-	"IBS/node/routing"
 	"fmt"
+	"github.com/deffusion/IBS/network/num_set"
+	"github.com/deffusion/IBS/node"
+	"github.com/deffusion/IBS/node/hash"
+	"github.com/deffusion/IBS/node/routing"
 	"log"
 )
 

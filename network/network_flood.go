@@ -1,9 +1,9 @@
 package network
 
 import (
-	"IBS/node"
-	"IBS/node/routing"
 	"fmt"
+	"github.com/deffusion/IBS/node"
+	"github.com/deffusion/IBS/node/routing"
 	"math/rand"
 )
 

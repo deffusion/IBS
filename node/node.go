@@ -1,6 +1,6 @@
 package node
 
-import "IBS/node/routing"
+import "github.com/deffusion/IBS/node/routing"
 
 type Node interface {
 	ResetRoutingTable(routing.Table)

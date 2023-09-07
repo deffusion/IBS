@@ -1,3 +1,3 @@
-module IBS
+module github.com/deffusion/IBS
 
-go 1.17
+go 1.20

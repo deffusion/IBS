@@ -1,7 +1,7 @@
 package node
 
 import (
-	"IBS/node/routing"
+	"github.com/deffusion/IBS/node/routing"
 )
 
 type BasicNode struct {
@@ -47,9 +47,9 @@ func (n *BasicNode) Region() string {
 	return n.region
 }
 
-//func (n *BasicNode) DownloadBandwidth() int {
-//	return n.downloadBandwidth
-//}
+//	func (n *BasicNode) DownloadBandwidth() int {
+//		return n.downloadBandwidth
+//	}
 func (n *BasicNode) UploadBandwidth() int {
 	return n.uploadBandwidth
 }

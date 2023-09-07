@@ -1,9 +1,9 @@
 package output
 
 import (
-	"IBS/node"
 	"encoding/json"
 	"fmt"
+	"github.com/deffusion/IBS/node"
 	"io/ioutil"
 	"strconv"
 )

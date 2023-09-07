@@ -1,7 +1,7 @@
 package node
 
 import (
-	"IBS/node/routing"
+	"github.com/deffusion/IBS/node/routing"
 )
 
 type NeNode struct {

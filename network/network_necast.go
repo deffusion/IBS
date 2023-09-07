@@ -1,12 +1,12 @@
 package network
 
 import (
-	"IBS/information"
-	"IBS/network/num_set"
-	"IBS/node"
-	"IBS/node/hash"
-	"IBS/node/routing"
 	"fmt"
+	"github.com/deffusion/IBS/information"
+	"github.com/deffusion/IBS/network/num_set"
+	"github.com/deffusion/IBS/node"
+	"github.com/deffusion/IBS/node/hash"
+	"github.com/deffusion/IBS/node/routing"
 )
 
 type NecastNet struct {

@@ -1,9 +1,9 @@
 package network
 
 import (
-	"IBS/information"
-	"IBS/node"
-	"IBS/node/routing"
+	"github.com/deffusion/IBS/information"
+	"github.com/deffusion/IBS/node"
+	"github.com/deffusion/IBS/node/routing"
 )
 
 const BootNodeID = 0

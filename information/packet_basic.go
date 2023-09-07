@@ -1,7 +1,7 @@
 package information
 
 import (
-	"IBS/node"
+	"github.com/deffusion/IBS/node"
 )
 
 type BasicPacket struct {
@@ -85,9 +85,9 @@ func (p *BasicPacket) SetAndAddQueuingDelay(queueing int32) {
 	p.timestamp += int64(queueing)
 }
 
-//func (p *BasicPacket) QueuingDelayReceiving() int32 {
-//	return p.queuingDelayReceiving
-//}
+//	func (p *BasicPacket) QueuingDelayReceiving() int32 {
+//		return p.queuingDelayReceiving
+//	}
 func (p *BasicPacket) From() node.Node {
 	return p.from
 }

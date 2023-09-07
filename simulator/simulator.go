@@ -1,12 +1,12 @@
 package main
 
 import (
-	"IBS/information"
-	"IBS/network"
-	"IBS/node"
-	"IBS/output"
 	"container/heap"
 	"fmt"
+	"github.com/deffusion/IBS/information"
+	"github.com/deffusion/IBS/network"
+	"github.com/deffusion/IBS/node"
+	"github.com/deffusion/IBS/output"
 	"log"
 )
 

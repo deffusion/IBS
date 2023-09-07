@@ -1,12 +1,12 @@
 package network
 
 import (
-	"IBS/information"
-	"IBS/node"
-	"IBS/node/routing"
-	"IBS/output"
 	"encoding/json"
 	"fmt"
+	"github.com/deffusion/IBS/information"
+	"github.com/deffusion/IBS/node"
+	"github.com/deffusion/IBS/node/routing"
+	"github.com/deffusion/IBS/output"
 	"io/ioutil"
 	"math/rand"
 	"os"

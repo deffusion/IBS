@@ -1,8 +1,8 @@
 package information
 
 import (
-	"IBS/node"
 	"fmt"
+	"github.com/deffusion/IBS/node"
 )
 
 type meta struct {

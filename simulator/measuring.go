@@ -1,7 +1,7 @@
 package main
 
 import (
-	"IBS/node"
+	"github.com/deffusion/IBS/node"
 )
 
 type MessageRec struct {
