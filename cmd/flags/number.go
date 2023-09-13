@@ -1,6 +1,9 @@
 package flags
 
-import "github.com/urfave/cli/v2"
+import (
+	"github.com/urfave/cli/v2"
+	"math"
+)
 
 var NetSize = &cli.IntFlag{
 	Name:        "net_size",
@@ -35,4 +38,11 @@ var Beta = &cli.IntFlag{
 	Usage:       "the broadcast redundancy factor β",
 	Value:       1,
 	DefaultText: "1",
+}
+
+var CrashInterval = &cli.IntFlag{
+	Name:        "crash_interval",
+	Usage:       "specify the interval of network disturbance, unit: μs(0.001ms)",
+	Value:       math.MaxInt,
+	DefaultText: "math.MaxInt",
 }

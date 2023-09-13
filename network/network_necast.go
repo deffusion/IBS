@@ -27,7 +27,7 @@ func NewNecastNode(index int, uploadBandwidth int, region string, config map[str
 	)
 }
 
-func NewNecastNet(size, k, beta int) *NecastNet {
+func NewNecastNet(size, k, beta int) Network {
 	fmt.Println("===== ne-kademlia =====")
 	fmt.Println("beta:", beta, "bucket size:", k)
 	// bootNode is used for message generation (from node) only here

@@ -25,7 +25,7 @@ func NewKadcastNode(index int, uploadBandwidth int, region string, config map[st
 		routing.NewKadcastTable(nodeID, config["k"], config["beta"]),
 	)
 }
-func NewKadcastNet(size, k, beta int) *KadcastNet {
+func NewKadcastNet(size, k, beta int) Network {
 	//fmt.Println("===== kademlia =====")
 	//fmt.Println("beta:", beta, "bucket size:", k)
 	// bootNode is used for message generation (from node) only here
