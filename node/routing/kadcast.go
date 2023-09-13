@@ -32,11 +32,11 @@ func (t *KadcastTable) NoRoomForNewPeer(peerID uint64) bool {
 	return false
 }
 
-func (t *KadcastTable) SetPeerLimit(k int) {
+func (t *KadcastTable) SetTableSize(k int) {
 	t.k = k
 }
 
-func (t *KadcastTable) PeerLimit() int {
+func (t *KadcastTable) TableSize() int {
 	return math.MaxInt
 }
 

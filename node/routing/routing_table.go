@@ -2,8 +2,8 @@ package routing
 
 type Table interface {
 	Length() int
-	SetPeerLimit(int)
-	PeerLimit() int
+	SetTableSize(int)
+	TableSize() int
 	NoRoomForNewPeer(peerID uint64) bool
 	AddPeer(PeerInfo) error
 	RemovePeer(uint64)

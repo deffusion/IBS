@@ -3,18 +3,21 @@ package routing
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 )
 
 type FloodTable struct {
 	// id:int
-	table map[uint64]PeerInfo
-	limit int
+	table     map[uint64]PeerInfo
+	tableSize int
+	degree    int
 }
 
-func NewFloodTable(limit int) *FloodTable {
+func NewFloodTable(tableSize, degree int) Table {
 	return &FloodTable{
 		make(map[uint64]PeerInfo),
-		limit,
+		tableSize,
+		degree,
 	}
 }
 
@@ -22,22 +25,22 @@ func (t *FloodTable) Length() int {
 	return len(t.table)
 }
 
-func (t *FloodTable) SetPeerLimit(n int) {
-	t.limit = n
+func (t *FloodTable) SetTableSize(n int) {
+	t.tableSize = n
 }
 
-func (t *FloodTable) PeerLimit() int {
-	return t.limit
+func (t *FloodTable) TableSize() int {
+	return t.tableSize
 }
 func (t *FloodTable) NoRoomForNewPeer(peerID uint64) bool {
-	return len(t.table) >= t.limit
+	return len(t.table) >= t.tableSize
 }
 
 func (t *FloodTable) AddPeer(peerInfo PeerInfo) error {
 	if !t.NoRoomForNewPeer(peerInfo.PeerID()) {
 		t.table[peerInfo.PeerID()] = peerInfo
 	} else {
-		s := fmt.Sprintf("adding peer into a full table, size:%d", t.limit)
+		s := fmt.Sprintf("adding peer into a full table, size:%d", t.tableSize)
 		return errors.New(s)
 	}
 	return nil
@@ -47,6 +50,23 @@ func (t *FloodTable) RemovePeer(peerID uint64) {
 	delete(t.table, peerID)
 }
 
+func randomFrom(degree int, all []uint64) []uint64 {
+	if degree > len(all) {
+		degree = len(all)
+	}
+	copi := make([]uint64, len(all))
+	selected := make([]uint64, 0, degree)
+	copy(copi, all)
+	for i := 0; i < degree; i++ {
+		r := rand.Intn(len(copi))
+		selected = append(selected, copi[r])
+		copy(copi[r:], copi[r+1:])
+		copi = copi[:len(copi)-1]
+	}
+	return selected
+}
+
+// TODO: 从n个中随机选择k个
 func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
 	var peers []uint64
 	// broadcast to all peers except the sender
@@ -55,7 +75,7 @@ func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
 			peers = append(peers, id)
 		}
 	}
-	return peers
+	return randomFrom(t.degree, peers)
 }
 
 func (t *FloodTable) SetLastSeen(id uint64, timestamp int64) error {

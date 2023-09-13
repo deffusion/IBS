@@ -87,7 +87,7 @@ func (kNet *KadcastNet) churn(crashFrom int, routing func(nodeID uint64, k, beta
 			// it can be seen as the crashed nodes leave the network
 			n.ResetRoutingTable(routing(n.Id(), kNet.k, kNet.beta))
 			n.Run()
-			kNet.introduceAndConnect(n, NewNecastPeerInfo)
+			kNet.introduceAndConnect(n, NewBasicPeerInfo)
 		}
 	}
 	return kNet.NodeCrash(crashFrom)
