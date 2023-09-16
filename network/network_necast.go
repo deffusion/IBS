@@ -13,8 +13,8 @@ type NecastNet struct {
 	*KadcastNet
 }
 
-func NewNecastPeerInfo(n node.Node) routing.PeerInfo {
-	return routing.NewNecastPeerInfo(n.Id())
+func NewNePeerInfo(n node.Node) routing.PeerInfo {
+	return routing.NewNePeerInfo(n.Id())
 }
 func NewNecastNode(index int, uploadBandwidth int, region string, config map[string]int) node.Node {
 	nodeID := hash.Hash64(uint64(index))
@@ -43,7 +43,7 @@ func NewNecastNet(size, k, beta int) Network {
 			num_set.NewSet(),
 		},
 	}
-	nNet.initConnections(NewNecastPeerInfo)
+	nNet.initConnections(NewNePeerInfo)
 	return nNet
 }
 

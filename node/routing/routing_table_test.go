@@ -6,7 +6,7 @@ import (
 )
 
 func TestNecastPeerInfo(t *testing.T) {
-	info := NewNecastPeerInfo(1)
+	info := NewNePeerInfo(1)
 	info.NewMsg()
 	info.Confirmation()
 	info.ReceivedConfirmation()

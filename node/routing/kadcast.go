@@ -12,6 +12,17 @@ type KadcastTable struct {
 	peerCount int
 }
 
+func (t *KadcastTable) IsNeighbour(ID uint64) bool {
+	if ID == 0 {
+		return false
+	}
+	_, i := t.Locate(ID)
+	if i != -1 {
+		return true
+	}
+	return false
+}
+
 func NewKadcastTable(nodeID uint64, k, beta int) Table {
 	return &KadcastTable{
 		NewKademlia(nodeID, k),

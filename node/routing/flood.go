@@ -13,6 +13,11 @@ type FloodTable struct {
 	degree    int
 }
 
+func (t *FloodTable) IsNeighbour(u uint64) bool {
+	_, ok := t.table[u]
+	return ok
+}
+
 func NewFloodTable(tableSize, degree int) Table {
 	return &FloodTable{
 		make(map[uint64]PeerInfo),
@@ -66,6 +71,16 @@ func randomFrom(degree int, all []uint64) []uint64 {
 	return selected
 }
 
+func (t *FloodTable) PeersExcept(eid uint64) PeerInfos {
+	ps := make([]PeerInfo, 0, len(t.table))
+	for id, info := range t.table {
+		if id != eid {
+			ps = append(ps, info)
+		}
+	}
+	return ps
+}
+
 // TODO: 从n个中随机选择k个
 func (t *FloodTable) PeersToBroadcast(from uint64) []uint64 {
 	var peers []uint64
@@ -86,5 +101,10 @@ func (t *FloodTable) SetLastSeen(id uint64, timestamp int64) error {
 	return errors.New("flood SetLastSeen: No such peer")
 }
 func (t *FloodTable) PrintTable() {
-	fmt.Println(t.table)
+	pis := make(PeerInfos, 0, len(t.table))
+	for _, info := range t.table {
+		pis = append(pis, info)
+		//fmt.Printf("%d(%f) ", info.PeerID(), info.Score())
+	}
+	fmt.Println(pis)
 }

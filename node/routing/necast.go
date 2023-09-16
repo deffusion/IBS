@@ -29,33 +29,35 @@ func (t *NeCastTable) PeersToBroadcast(from uint64) []uint64 {
 	t.SortPeers()
 	// broadcast to all peers in buckets of subtree that height less than b
 	for i := b; i < KeySpaceBits; i++ {
-		ps := t.RandomPeerBasedOnScore(i, t.Beta)
+		ps := randomPeersBasedOnScore(t.buckets[i], t.Beta)
+		//ps := t.randomPeerBasedOnScore(i, t.Beta)
 		peers = append(peers, ps...)
 	}
 	return peers
 }
 
-func (t *NeCastTable) IsNeighbour(ID uint64) bool {
-	if ID == 0 {
-		return false
-	}
-	_, i := t.Locate(ID)
-	if i != -1 {
-		return true
-	}
-	return false
-}
+//func (t *NeCastTable) IsNeighbour(ID uint64) bool {
+//	if ID == 0 {
+//		return false
+//	}
+//	_, i := t.Locate(ID)
+//	if i != -1 {
+//		return true
+//	}
+//	return false
+//}
 
-func (t *NeCastTable) necastPeerInfo(ID uint64) *NecastPeerInfo {
+func (t *NeCastTable) necastPeerInfo(ID uint64) *NePeerInfo {
 	b, i := t.Locate(ID)
 	if i == -1 {
 		return nil
 	}
-	return t.buckets[b][i].(*NecastPeerInfo)
+	return t.buckets[b][i].(*NePeerInfo)
 }
 
 func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
 	var randomPeers []uint64
+	//fmt.Println("n", n)
 	//if n > len(peers) {
 	//	n = len(peers)
 	//}
@@ -122,10 +124,10 @@ func randomPeersBasedOnScore(peers PeerInfos, n int) []uint64 {
 	return randomPeers
 }
 
-func (t *NeCastTable) RandomPeerBasedOnScore(bucket, n int) []uint64 {
-	peers := t.buckets[bucket]
-	return randomPeersBasedOnScore(peers, n)
-}
+//func (t *NeCastTable) randomPeerBasedOnScore(bucket, n int) []uint64 {
+//	peers := t.buckets[bucket]
+//	return randomPeersBasedOnScore(peers, n)
+//}
 
 func (t *NeCastTable) IncrementNewMsg(ID uint64) {
 	pi := t.necastPeerInfo(ID)

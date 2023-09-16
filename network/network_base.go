@@ -252,19 +252,12 @@ func (net *BaseNetwork) succeedingPackets(p *information.BasicPacket, IDs *[]uin
 	//	return packets
 	//}
 	receivedAt := p.Timestamp()
-	received := sender.Received(p.ID(), p.Timestamp())
-	if received == true {
-		p.SetRedundancy(true)
-		//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
-		return packets
-	}
-	switch sender.(type) {
-	case *node.NeNode:
-		if p.From().Malicious() == true {
-			fmt.Println("new msg from malicious node")
-		}
-		sender.(*node.NeNode).NewMsg(p.From().Id())
-	}
+	//received := sender.Received(p.ID(), p.Timestamp())
+	//if received == true {
+	//	p.SetRedundancy(true)
+	//	//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
+	//	return packets
+	//}
 	//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
 	//IDs := sender.PeersToBroadCast(p.from)
 	regionID := net.RegionId
@@ -311,6 +304,19 @@ func (net *BaseNetwork) succeedingPackets(p *information.BasicPacket, IDs *[]uin
 //	func (net *BaseNetwork) PacketReplacement(p *information.BasicPacket) (information.Packets, int, int) {
 //		malicious, total := 0, 0
 func (net *BaseNetwork) PacketReplacement(p *information.BasicPacket) information.Packets {
+	received := p.To().Received(p.ID(), p.Timestamp())
+	if received == true {
+		p.SetRedundancy(true)
+		//fmt.Printf("%d->%d info=%d hop=%d t=%d μs (redundancy: %t)\n", p.from.Id(), sender.Id(), p.id, p.hop, p.timestamp, p.redundancy)
+		return information.Packets{}
+	}
+	switch sender := p.To().(type) {
+	case *node.NeNode:
+		if p.From().Malicious() == true {
+			fmt.Println("new msg from malicious node")
+		}
+		sender.NewMsg(p.From().Id())
+	}
 	var peers = p.To().PeersToBroadCast(p.From())
 	crashCnt := 0
 	var n node.Node
@@ -327,6 +333,11 @@ func (net *BaseNetwork) PacketReplacement(p *information.BasicPacket) informatio
 		//total++
 	}
 	peers = peers[:len(peers)-crashCnt]
+	//if p.ID() == 89 {
+	//	fmt.Println(p.From().Id(), "->", p.To().Id())
+	//	p.To().PrintTable()
+	//	fmt.Println("relay to:", peers)
+	//}
 	//if total > 10 {
 	//fmt.Printf("total:%d, malicious:%d\n", total, malicious)
 	//}

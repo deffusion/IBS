@@ -40,6 +40,20 @@ var Beta = &cli.IntFlag{
 	DefaultText: "1",
 }
 
+var TableSize = &cli.IntFlag{
+	Name:        "table_size",
+	Usage:       "the table size of nodes in flooding based net",
+	Value:       15,
+	DefaultText: "15",
+}
+
+var Degree = &cli.IntFlag{
+	Name:        "degree",
+	Usage:       "the broadcast degree in flooding based net",
+	Value:       4,
+	DefaultText: "4",
+}
+
 var CrashInterval = &cli.IntFlag{
 	Name:        "crash_interval",
 	Usage:       "specify the interval of network disturbance, unit: μs(0.001ms)",

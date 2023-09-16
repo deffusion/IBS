@@ -101,13 +101,14 @@ func (s *Simulator) Run(initAllBroadcast bool) {
 			//malitrans++
 			continue
 		}
+
 		//packet := p.(*information.BasicPacket)
 		var succeedingPackets information.Packets
 		switch dNode := sender.(type) {
 		case *node.NeNode:
 			// the sender will be added if the receiver's bucket have space for it
 			if p.From().Id() != network.BootNodeID {
-				dNode.AddPeer(network.NewNecastPeerInfo(p.From()))
+				dNode.AddPeer(network.NewNePeerInfo(p.From()))
 			}
 			// if the packet is sent by this node
 			if p.Origin().Id() == dNode.Id() && p.From().Id() != network.BootNodeID {

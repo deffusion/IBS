@@ -1,5 +1,10 @@
 package routing
 
+import (
+	"fmt"
+	"sort"
+)
+
 type Table interface {
 	Length() int
 	SetTableSize(int)
@@ -10,6 +15,14 @@ type Table interface {
 	PeersToBroadcast(from uint64) []uint64
 	SetLastSeen(uint64, int64) error // peerID, timestamp
 	PrintTable()
+	IsNeighbour(uint64) bool
+}
+
+type NeTable interface {
+	Table
+	IncrementNewMsg(uint64)
+	IncrementConfirmation(uint64)
+	IncrementReceivedConfirmation(uint64)
 }
 
 // PeerInfo : rank from the peer
@@ -25,6 +38,15 @@ type PeerInfo interface {
 }
 
 type PeerInfos []PeerInfo
+
+func (ps PeerInfos) String() string {
+	sort.Sort(ps)
+	str := ""
+	for _, p := range ps {
+		str += fmt.Sprintf("%d(%f) ", p.PeerID(), p.Score())
+	}
+	return str
+}
 
 func (ps PeerInfos) Len() int {
 	return len(ps)
@@ -69,30 +91,30 @@ func (i *BasicPeerInfo) LastSeen() int64 {
 	return i.lastSeen
 }
 
-type NecastPeerInfo struct {
+type NePeerInfo struct {
 	*BasicPeerInfo
 	newMsg               int
 	confirmation         int
 	receivedConfirmation int
 }
 
-func NewNecastPeerInfo(id uint64) *NecastPeerInfo {
-	return &NecastPeerInfo{
+func NewNePeerInfo(id uint64) *NePeerInfo {
+	return &NePeerInfo{
 		NewBasicPeerInfo(id),
 		0,
 		0,
 		0,
 	}
 }
-func (n *NecastPeerInfo) NewMsg() {
+func (n *NePeerInfo) NewMsg() {
 	n.newMsg += 1
 }
-func (n *NecastPeerInfo) Confirmation() {
+func (n *NePeerInfo) Confirmation() {
 	n.confirmation += 1
 }
-func (n *NecastPeerInfo) ReceivedConfirmation() {
+func (n *NePeerInfo) ReceivedConfirmation() {
 	n.receivedConfirmation += 1
 }
-func (n *NecastPeerInfo) Score() float64 {
+func (n *NePeerInfo) Score() float64 {
 	return float64(n.newMsg + n.confirmation + n.receivedConfirmation)
 }

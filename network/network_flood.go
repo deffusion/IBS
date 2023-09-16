@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	"github.com/deffusion/IBS/node"
 	"github.com/deffusion/IBS/node/routing"
 	"math/rand"
@@ -24,8 +23,7 @@ type FloodNet struct {
 	*BaseNetwork
 }
 
-func NewFloodNet(size, tableSize, degree int) *FloodNet {
-	fmt.Println("degree:", degree)
+func NewFloodNet(size, tableSize, degree int) Network {
 	// bootNode is used for message generation (from node) only here
 	bootNode := node.NewBasicNode(0, 0, 0, "", nil)
 	net := NewBasicNetwork(bootNode)
@@ -38,7 +36,7 @@ func NewFloodNet(size, tableSize, degree int) *FloodNet {
 		degree,
 		net,
 	}
-	fNet.initConnections()
+	fNet.initConnections(NewBasicPeerInfo)
 	return fNet
 }
 
@@ -53,16 +51,16 @@ func (fNet *FloodNet) Introduce(n int) []node.Node {
 	return nodes
 }
 
-func (fNet *FloodNet) initConnections() {
+func (fNet *FloodNet) initConnections(f NewPeerInfo) {
 	//var cnts []int
 	for _, node := range fNet.Nodes {
 		//cnt := 0
 		//fNet.bootNode.AddPeer(NewBasicPeerInfo(node))
 		connectCount := node.RoutingTableLength()
 		//cnts = append(cnts, fNet.degree-connectCount)
-		peers := fNet.Introduce(fNet.degree - connectCount)
+		peers := fNet.Introduce(fNet.tableSize - connectCount)
 		for _, peer := range peers {
-			if fNet.Connect(node, peer, NewBasicPeerInfo) == true {
+			if fNet.Connect(node, peer, f) == true {
 				//cnt++
 			}
 		}
@@ -92,4 +90,8 @@ func (fNet *FloodNet) churn(crashFrom int, routing func(tableSize, degree int) r
 
 func (fNet *FloodNet) Churn(crashFrom int) int {
 	return fNet.churn(crashFrom, routing.NewFloodTable)
+}
+
+func (fNet FloodNet) Infest(crashFrom int) int {
+	return fNet.NodeInfest(crashFrom)
 }
