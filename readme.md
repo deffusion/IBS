@@ -6,35 +6,35 @@ P2P Information Broadcast Simulator
 simulate the kademlia-based brodcasting algorithm:
 - broadcast latency:
     ```shell
-    > go run main.go kademlia latency
+    go run main.go kademlia latency
     ```
 - coverage rate
     
     half nodes in the network will be selected as crashed nodes (disconnected)
     ```shell
-    > go run main.go kademlia coverage
+    go run main.go kademlia coverage
     ```
 
 simulate the flood-based brodcasting algorithm:
 - broadcast latency:
     ```shell
-    > go run main.go flood latency
+    go run main.go flood latency
     ```
 - coverage rate
     ```shell
-    > go run main.go flood coverage
+    go run main.go flood coverage
     ```
 
 or you can build this project then run the executable binary file, for example:
 - windows
     ```shell
-    > go build -o ibs.exe .
-    > ibs.exe kademlia latency
+    go build -o ibs.exe .
+    ibs.exe kademlia latency
     ```
 - linux
     ```shell
-    > go build -o ibs .
-    > ibs kademlia latency
+    go build -o ibs .
+    ibs kademlia latency
     ```
 ## Flag
 | Flag     | Description                                                                                                            | Default Value |
