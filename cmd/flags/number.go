@@ -22,7 +22,7 @@ var BroadcastPerNode = &cli.IntFlag{
 var BroadcastInterval = &cli.IntFlag{
 	Name:        "broadcast_interval",
 	Usage:       "unit: μs(0.001ms)",
-	Value:       5_000, // 5ms
+	Value:       5000, // 5ms
 	DefaultText: "5000",
 }
 
