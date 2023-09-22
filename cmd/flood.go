@@ -26,6 +26,7 @@ var floodLatency = &cli.Command{
 		flags.Degree,
 		flags.BroadcastPerNode,
 		flags.BroadcastInterval,
+		flags.CrashInterval,
 		flags.NetSize,
 		flags.WithNE,
 	},
