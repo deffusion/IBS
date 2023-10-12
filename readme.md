@@ -51,9 +51,9 @@ or you can build this project then run the executable binary file, for example:
 | malicious | half of nodes in the network will receive messages but do not relay them, instead of just diconnected from the network | false         |
 
 ## Example
-- 500 nodes kademlia broadcasting network with NE mechanism, a new broadcast will be initialized every 2ms, redundancy factor is 3, and half nodes in the network will not relay messages:
+- 500 nodes kademlia broadcasting network with NE mechanism, a new broadcast will be initialized every 2ms, redundancy factor is 3:
 ```shell
-> ibs kademlia latency --net_size 500 --broadcast_interval 2000 --beta 3 --with_ne --malicious
+> ibs kademlia latency --net_size 500 --broadcast_interval 2000 --beta 3 --with_ne
 ```
 - 1000 (default) nodes kademlia broadcasting network, a new broadcast will be initialized every 5ms (default), and every 60s about half of nodes (around 500) in the net will be disconnected (rejoin disconnected nodes in the last round of disturbance into the network, clear and rebuild routing tables of them)
 ```shell
