@@ -69,6 +69,11 @@ func NewBasicNetwork(bootNode node.Node) *BaseNetwork {
 	return net
 }
 
+func (net *BaseNetwork) ClearState() {
+	net.lastPacketIndex = 0
+	net.lastOriginNodeIndex = 0
+}
+
 func (net *BaseNetwork) loadConf() {
 	// DelayOfRegions
 	delay, err := os.ReadFile("conf/delay.json")
@@ -223,22 +228,45 @@ func (net *BaseNetwork) NodeCrash(i int) int {
 }
 
 // NodeInfest makes nodes from i to netSize refuse to relay messages
+//
+//	func (net *BaseNetwork) NodeInfest(i int) int {
+//		rd := rand.New(rand.NewSource(time.Now().Unix()))
+//		cnt := 0
+//		if i < 1 {
+//			i = 1
+//		}
+//		for ; i <= net.Size(); i++ {
+//			id := net.NodeID(i)
+//			n := net.Node(id)
+//			r := rd.Intn(net.Size())
+//			if n.CrashFactor() >= r {
+//				cnt++
+//				n.Infest()
+//			}
+//		}
+//		return cnt
+//	}
 func (net *BaseNetwork) NodeInfest(i int) int {
-	rd := rand.New(rand.NewSource(time.Now().Unix()))
 	cnt := 0
 	if i < 1 {
 		i = 1
 	}
 	for ; i <= net.Size(); i++ {
-		id := net.NodeID(i)
-		n := net.Node(id)
-		r := rd.Intn(net.Size())
-		if n.CrashFactor() >= r {
+		if i%2 == 0 {
+			id := net.NodeID(i)
+			n := net.Node(id)
 			cnt++
 			n.Infest()
 		}
 	}
 	return cnt
+}
+
+func (net *BaseNetwork) ResetNodesReceived() {
+	fmt.Println("reset nodes received, len:", len(net.Nodes))
+	for _, n := range net.Nodes {
+		n.ResetStates()
+	}
 }
 
 func (net *BaseNetwork) succeedingPackets(p *information.BasicPacket, IDs *[]uint64) information.Packets {

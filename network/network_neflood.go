@@ -1,7 +1,6 @@
 package network
 
 import (
-	"github.com/deffusion/IBS/information"
 	"github.com/deffusion/IBS/node"
 	"github.com/deffusion/IBS/node/routing"
 )
@@ -22,7 +21,7 @@ func NewNeFloodNode(index int, uploadBandwidth int, region string, config map[st
 
 func NewNeFloodNet(size, tableSize, degree int) Network {
 	// bootNode is used for message generation (from node) only here
-	bootNode := node.NewBasicNode(BootNodeID, 0, 0, "", nil)
+	bootNode := node.NewNeNode(BootNodeID, 0, 0, "", nil)
 	net := NewBasicNetwork(bootNode)
 	config := map[string]int{"tableSize": tableSize, "degree": degree}
 	net.generateNodes(size, NewNeFloodNode, config)
@@ -42,14 +41,14 @@ func NewNeFloodNet(size, tableSize, degree int) Network {
 }
 
 func (nNet *NeFloodNet) Churn(crashFrom int) int {
-	return nNet.churn(crashFrom, routing.NewNeFloodTable)
+	return nNet.churn(crashFrom, routing.NewNeFloodTable, NewNePeerInfo)
 }
 
-func (nNet *NeFloodNet) PacketReplacement(p *information.BasicPacket) information.Packets {
-	packets := nNet.BaseNetwork.PacketReplacement(p)
-	neNode := p.To().(*node.NeNode)
-	if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
-		packets = append(packets, p.ConfirmPacket())
-	}
-	return packets
-}
+//func (nNet *NeFloodNet) PacketReplacement(p *information.BasicPacket) information.Packets {
+//	packets := nNet.BaseNetwork.PacketReplacement(p)
+//	neNode := p.To().(*node.NeNode)
+//	if neNode.Id() != p.Origin().Id() && neNode.IsNeighbour(p.Origin().Id()) && neNode.Id() != p.Relay().Id() {
+//		packets = append(packets, p.ConfirmPacket())
+//	}
+//	return packets
+//}

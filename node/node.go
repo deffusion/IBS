@@ -4,6 +4,7 @@ import "github.com/deffusion/IBS/node/routing"
 
 type Node interface {
 	ResetRoutingTable(routing.Table)
+	ResetStates()
 	Id() uint64
 	Region() string
 	//DownloadBandwidth() int

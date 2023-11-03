@@ -53,6 +53,8 @@ var floodCoverage = &cli.Command{
 		flags.NetSize,
 		flags.WithNE,
 		flags.MaliciousNode,
+		flags.OutputPacket,
+		flags.NeLearn,
 	},
 	Action: func(ctx *cli.Context) error {
 		tableSize := ctx.Int("table_size")
@@ -77,9 +79,18 @@ func floodProcess(ctx *cli.Context, disturbNet bool, folder string) error {
 	degree := ctx.Int("degree")
 	crashInterval := ctx.Int("crash_interval")
 	withNE := ctx.Bool("with_ne")
+	learn := ctx.Bool("ne_learn")
+	outputPacket := ctx.Bool("output_packet")
+
+	if !withNE && learn {
+		return errors.New("bad instruction")
+	}
 
 	if disturbNet {
 		malicious := ctx.Bool("malicious")
+		if malicious {
+			folder = folder + "_mal"
+		}
 		if malicious && crashInterval < math.MaxInt {
 			return errors.New("bad instruction")
 		}
@@ -111,22 +122,40 @@ func floodProcess(ctx *cli.Context, disturbNet bool, folder string) error {
 		InitNet = network.NewNeFloodNet
 	}
 	net := InitNet(netSize, tableSize, degree)
-	sim := simulator.New(net, nMessage, netSize, crashInterval, broadcastInterval)
+	var sim *simulator.Simulator
+	if learn {
+		sim = simulator.New(net, 10*nMessage, netSize, crashInterval, broadcastInterval)
+	} else {
+		sim = simulator.New(net, nMessage, netSize, crashInterval, broadcastInterval)
+	}
+	sim.InitState()
 	if disturbNet {
 		malicious := ctx.Bool("malicious")
 		if malicious {
 			cntInfest := net.Infest(1)
+			logFile.Write([]byte(fmt.Sprintf("infested: %d\n", cntInfest)))
 			fmt.Println("infested: ", cntInfest)
 		} else {
 			cntCrash := net.Churn(1)
+			logFile.Write([]byte(fmt.Sprintf("first crashed: %d\n", cntCrash)))
 			fmt.Println("first crashed: ", cntCrash)
 		}
 	}
-	sim.Run(false)
+	sim.Run(false, outputPacket && !learn)
+	if learn {
+		sim.InitState()
+		sim.ResetNMsg(nMessage)
+		sim.Run(false, outputPacket)
+	}
 	outputText := sim.Statistic()
 	logFile.Write([]byte(outputText))
 	fmt.Println(outputText)
 	sim.OutputNodes(folder)
 	sim.OutputLatency(folder)
+	sim.OutputReceived(folder)
+	if outputPacket {
+		fmt.Println("output packet to:", folder)
+		sim.OutputPackets(folder)
+	}
 	return nil
 }

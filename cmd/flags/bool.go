@@ -12,3 +12,11 @@ var MaliciousNode = &cli.BoolFlag{
 	Usage: "true: half of nodes refuse to relay messages\n" +
 		"false: half of nodes disconnect",
 }
+
+var OutputPacket = &cli.BoolFlag{
+	Name: "output_packet",
+}
+
+var NeLearn = &cli.BoolFlag{
+	Name: "ne_learn",
+}

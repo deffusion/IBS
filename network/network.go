@@ -15,6 +15,7 @@ func NewBasicPeerInfo(n node.Node) routing.PeerInfo {
 }
 
 type Network interface {
+	ClearState()
 	BootNode() node.Node
 	Node(id uint64) node.Node
 	NodeID(i int) uint64
@@ -23,6 +24,7 @@ type Network interface {
 	Size() int
 	NodeCrash(i int) int
 	NodeInfest(i int) int
+	ResetNodesReceived()
 	NewPacketGeneration(timestamp int64) information.Packet
 	succeedingPackets(p *information.BasicPacket, IDs *[]uint64) information.Packets
 	//PacketReplacement(p *information.BasicPacket) (information.Packets, int, int)

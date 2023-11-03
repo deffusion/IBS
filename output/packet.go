@@ -38,19 +38,20 @@ func newPacket(p *information.BasicPacket) *Packet {
 
 type PacketOutput []*Packet
 
-func NewPacketOutput() *PacketOutput {
-	return &PacketOutput{}
+func NewPacketOutput() PacketOutput {
+	return PacketOutput{}
 }
 func (o *PacketOutput) Append(p *information.BasicPacket) {
 	*o = append(*o, newPacket(p))
 }
 
-func (o *PacketOutput) WritePackets() {
+func (o *PacketOutput) WritePackets(folder string) {
 	b, err := json.Marshal(o)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = ioutil.WriteFile("output/output_packets.json", b, 0777)
+	filename := fmt.Sprintf("%s/output_packets.json", folder)
+	err = ioutil.WriteFile(filename, b, 0777)
 	if err != nil {
 		fmt.Println(err)
 	}

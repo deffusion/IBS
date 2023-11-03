@@ -2,11 +2,14 @@ package simulator
 
 import (
 	"container/heap"
+	"encoding/json"
 	"fmt"
 	"github.com/deffusion/IBS/information"
 	"github.com/deffusion/IBS/network"
 	"github.com/deffusion/IBS/node"
 	"github.com/deffusion/IBS/output"
+	"io/ioutil"
+	"sort"
 )
 
 type Simulator struct {
@@ -23,6 +26,7 @@ type Simulator struct {
 	NodeOutput     output.NodeOutput
 	coverageOutput output.PacketCoverageOutput
 	latencyOutput  output.LatencyOutput
+	packetOutput   output.PacketOutput
 
 	endAt               int64
 	sentCnt, confirmCnt int
@@ -30,27 +34,17 @@ type Simulator struct {
 
 func New(net network.Network, nMessage, logFactor, crashInterval, broadcastInterval int) *Simulator {
 	return &Simulator{
-		nMessage,
-		logFactor,
-		crashInterval,
-		broadcastInterval,
-		0,
-		0,
+		nMessage:          nMessage,
+		logFactor:         logFactor,
+		crashInterval:     crashInterval,
+		broadcastInterval: broadcastInterval,
 
-		net,
-		information.NewInfoSorter(),
-		[]*MessageRec{},
-		output.NewNodeOutput(),
-		output.NewCoverageOutput(),
-		output.NewLatencyOutput(),
-
-		0,
-		0,
-		0,
+		net: net,
 	}
 }
 
 func (s *Simulator) initAllBroadcast() {
+	fmt.Println("init all broadcasts")
 	//m := s.net.NewPacketGeneration(0)
 	//heap.Push(s.sorter, m)
 	//s.progress = append(s.progress, NewPacketStatistic(m.To(), m.Timestamp()))
@@ -67,8 +61,28 @@ func (s *Simulator) initOneBroadcast() {
 	s.progress = append(s.progress, NewPacketStatistic(m.To(), m.Timestamp()))
 }
 
+func (s *Simulator) InitState() {
+	s.net.ClearState()
+	s.lastCrashAt = 0
+	s.broadcastID = 0
+	s.net.ResetNodesReceived()
+	s.sorter = information.NewInfoSorter()
+	s.progress = []*MessageRec{}
+	s.NodeOutput = output.NewNodeOutput()
+	s.coverageOutput = output.NewCoverageOutput()
+	s.latencyOutput = output.NewLatencyOutput()
+	s.packetOutput = output.NewPacketOutput()
+	s.endAt = 0
+	s.sentCnt = 0
+	s.confirmCnt = 0
+}
+
+func (s *Simulator) ResetNMsg(nMessage int) {
+	s.nMessage = nMessage
+}
+
 // Run the packet replacement process until no packet remains in the sorter
-func (s *Simulator) Run(initAllBroadcast bool) {
+func (s *Simulator) Run(initAllBroadcast, outputPacket bool) {
 	if initAllBroadcast {
 		s.initAllBroadcast()
 	} else {
@@ -141,6 +155,7 @@ func (s *Simulator) Run(initAllBroadcast bool) {
 			s.coverageOutput[p.ID()]++
 			ps := s.progress[p.ID()]
 			ps.Received++
+			ps.LastTS = p.Timestamp()
 			if ps.Received%(s.net.Size()/5) == 0 {
 				ps.Timestamps[ps.Received] = p.Timestamp()
 			}
@@ -152,13 +167,15 @@ func (s *Simulator) Run(initAllBroadcast bool) {
 		//tFinish = p.Timestamp()
 		//}
 		//p.Print()
-		//outputPackets.Append(packet)
-
+		if outputPacket {
+			s.packetOutput.Append(p)
+		}
 	}
 	//fmt.Printf("%d/%d\n", malicious, total)
 	//fmt.Println("malicious transmission", malitrans)
-	//output.WritePackets(outputs)
-	//outputPackets.WritePackets()
+	//if outputPacket {
+	//	s.packetOutput.WritePackets()
+	//}
 
 }
 
@@ -167,7 +184,7 @@ func (s *Simulator) Statistic() string {
 	s.latencyOutput = output.NewLatencyOutput()
 	//fmt.Println("progress:")
 	for i, statistic := range s.progress {
-		s.latencyOutput.Append(i, statistic.Delay(s.net.Size()), statistic.From.Region())
+		s.latencyOutput.Append(i, statistic.Duration(), statistic.From.Region())
 		if i%s.logFactor != 0 {
 			continue
 		}
@@ -224,6 +241,25 @@ func (s *Simulator) OutputLatency(folder string) {
 }
 func (s *Simulator) OutputNodes(folder string) {
 	s.net.OutputNodes(folder)
+}
+func (s *Simulator) OutputPackets(folder string) {
+	s.packetOutput.WritePackets(folder)
+}
+func (s *Simulator) OutputReceived(folder string) {
+	received := make([]int, 0, s.net.Size())
+	for i := 1; i <= s.net.Size(); i++ {
+		received = append(received, s.net.Node(s.net.NodeID(i)).NumReceivedPackets())
+	}
+	sort.Ints(received)
+	b, err := json.Marshal(received)
+	if err != nil {
+		fmt.Println(err)
+	}
+	filename := fmt.Sprintf("%s/output_received.json", folder)
+	err = ioutil.WriteFile(filename, b, 0777)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 //func (s Simulator) OutputPackets()  {

@@ -40,6 +40,12 @@ func (n *BasicNode) ResetRoutingTable(table routing.Table) {
 	n.routingTable = table
 }
 
+func (n *BasicNode) ResetStates() {
+	n.crashTimes = 0
+	n.tsLastSending = 0
+	n.receivedPackets = map[int]int64{}
+}
+
 func (n *BasicNode) Id() uint64 {
 	return n.id
 }
