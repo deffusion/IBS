@@ -208,8 +208,15 @@ func (net *BaseNetwork) NewPacketGeneration(timestamp int64) information.Packet 
 	return p
 }
 
-// NodeCrash makes nodes from i to netSize offline (according to correspond nodes)
-func (net *BaseNetwork) NodeCrash(i int) int {
+// NodeCrash makes some nodes from i to netSize offline
+func (net *BaseNetwork) NodeCrash(i int, once bool) int {
+	if once {
+		return net.NodeCrashHalf(i)
+	}
+	return net.NodeCrashRandom(i)
+}
+
+func (net *BaseNetwork) NodeCrashRandom(i int) int {
 	rd := rand.New(rand.NewSource(time.Now().Unix()))
 	cnt := 0
 	if i < 1 {
@@ -220,6 +227,22 @@ func (net *BaseNetwork) NodeCrash(i int) int {
 		n := net.Node(id)
 		r := rd.Intn(net.Size())
 		if n.CrashFactor() >= r {
+			cnt++
+			n.Stop()
+		}
+	}
+	return cnt
+}
+
+func (net *BaseNetwork) NodeCrashHalf(i int) int {
+	cnt := 0
+	if i < 1 {
+		i = 1
+	}
+	for ; i <= net.Size(); i++ {
+		if i%2 == 0 {
+			id := net.NodeID(i)
+			n := net.Node(id)
 			cnt++
 			n.Stop()
 		}

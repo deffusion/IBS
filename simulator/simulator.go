@@ -141,7 +141,7 @@ func (s *Simulator) Run(initAllBroadcast, outputPacket bool) {
 		// churn the network
 		if p.Timestamp()-s.lastCrashAt > int64(s.crashInterval) {
 			s.lastCrashAt = p.Timestamp()
-			fmt.Println("t:", p.Timestamp(), "crashed:", s.net.Churn(1))
+			fmt.Println("t:", p.Timestamp(), "crashed:", s.net.Churn(1, false))
 		}
 		if !initAllBroadcast && p.Timestamp() > int64(s.broadcastID*s.broadcastInterval) && s.broadcastID < s.nMessage {
 			s.initOneBroadcast()

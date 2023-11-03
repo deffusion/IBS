@@ -40,8 +40,8 @@ func NewNeFloodNet(size, tableSize, degree int) Network {
 	return nNet
 }
 
-func (nNet *NeFloodNet) Churn(crashFrom int) int {
-	return nNet.churn(crashFrom, routing.NewNeFloodTable, NewNePeerInfo)
+func (nNet *NeFloodNet) Churn(crashFrom int, once bool) int {
+	return nNet.churn(crashFrom, once, routing.NewNeFloodTable, NewNePeerInfo)
 }
 
 //func (nNet *NeFloodNet) PacketReplacement(p *information.BasicPacket) information.Packets {

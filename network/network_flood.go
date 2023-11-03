@@ -76,7 +76,7 @@ func (fNet *FloodNet) introduceAndConnect(n node.Node, f NewPeerInfo) {
 	}
 }
 
-func (fNet *FloodNet) churn(crashFrom int,
+func (fNet *FloodNet) churn(crashFrom int, once bool,
 	routing func(tableSize, degree int) routing.Table,
 	peerInfo NewPeerInfo) int {
 	for _, n := range fNet.Nodes {
@@ -87,11 +87,11 @@ func (fNet *FloodNet) churn(crashFrom int,
 			fNet.introduceAndConnect(n, peerInfo)
 		}
 	}
-	return fNet.NodeCrash(crashFrom)
+	return fNet.NodeCrash(crashFrom, once)
 }
 
-func (fNet *FloodNet) Churn(crashFrom int) int {
-	return fNet.churn(crashFrom, routing.NewFloodTable, NewBasicPeerInfo)
+func (fNet *FloodNet) Churn(crashFrom int, once bool) int {
+	return fNet.churn(crashFrom, once, routing.NewFloodTable, NewBasicPeerInfo)
 }
 
 func (fNet FloodNet) Infest(crashFrom int) int {

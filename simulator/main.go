@@ -3,12 +3,12 @@ package simulator
 //func main() {
 //	// for i := 0; i < 20; i++ {
 //	// 	fmt.Println("=====", i, "=====")
-//	// 	once()
+//	// 	once5ms()
 //	// }
-//	once()
+//	once5ms()
 //}
 //
-//func once() {
+//func once5ms() {
 //	var NetSize = 1000
 //	var LogFactor = NetSize
 //	var NMessage = 10 * NetSize

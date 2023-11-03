@@ -22,14 +22,14 @@ type Network interface {
 	Connect(a, b node.Node, f NewPeerInfo) bool
 	Add(n node.Node, i int)
 	Size() int
-	NodeCrash(i int) int
+	NodeCrash(i int, once bool) int
 	NodeInfest(i int) int
 	ResetNodesReceived()
 	NewPacketGeneration(timestamp int64) information.Packet
 	succeedingPackets(p *information.BasicPacket, IDs *[]uint64) information.Packets
 	//PacketReplacement(p *information.BasicPacket) (information.Packets, int, int)
 	PacketReplacement(p *information.BasicPacket) information.Packets
-	Churn(crashFrom int) int
+	Churn(crashFrom int, once bool) int
 	Infest(infestFrom int) int
 	OutputNodes(string)
 }

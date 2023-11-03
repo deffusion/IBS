@@ -8,11 +8,11 @@
     "distribution": 0.6
   },
   {
-    "uploadBandwidth": 10,
+    "uploadBandwidth": 17,
     "distribution": 0.2
   },
   {
-    "uploadBandwidth": 9,
+    "uploadBandwidth": 16,
     "distribution": 0.1
   }
 ]

@@ -143,7 +143,7 @@ var kadCoverage = &cli.Command{
 			cntInfest := net.Infest(1)
 			fmt.Println("infested: ", cntInfest)
 		} else {
-			cntCrash := net.Churn(1)
+			cntCrash := net.Churn(1, !(crashInterval < math.MaxInt))
 			fmt.Println("first crashed: ", cntCrash)
 		}
 		sim := simulator.New(net, nMessage, netSize, crashInterval, broadcastInterval)

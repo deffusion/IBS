@@ -136,7 +136,7 @@ func floodProcess(ctx *cli.Context, disturbNet bool, folder string) error {
 			logFile.Write([]byte(fmt.Sprintf("infested: %d\n", cntInfest)))
 			fmt.Println("infested: ", cntInfest)
 		} else {
-			cntCrash := net.Churn(1)
+			cntCrash := net.Churn(1, !(crashInterval < math.MaxInt))
 			logFile.Write([]byte(fmt.Sprintf("first crashed: %d\n", cntCrash)))
 			fmt.Println("first crashed: ", cntCrash)
 		}
