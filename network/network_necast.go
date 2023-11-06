@@ -45,7 +45,7 @@ func NewNecastNet(size, k, beta int) Network {
 }
 
 func (nNet *NecastNet) Churn(crashFrom int, once bool) int {
-	return nNet.churn(crashFrom, once, routing.NewNecastTable)
+	return nNet.churn(crashFrom, once, routing.NewNecastTable, NewNePeerInfo)
 }
 
 //	func (nNet *NecastNet) PacketReplacement(p *information.BasicPacket) (information.Packets, int, int) {

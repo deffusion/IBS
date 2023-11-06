@@ -81,20 +81,22 @@ func (kNet *KadcastNet) introduceAndConnect(n node.Node, f NewPeerInfo) {
 	}
 }
 
-func (kNet *KadcastNet) churn(crashFrom int, once bool, routing func(nodeID uint64, k, beta int) routing.Table) int {
+func (kNet *KadcastNet) churn(crashFrom int, once bool,
+	routing func(nodeID uint64, k, beta int) routing.Table,
+	peerInfo NewPeerInfo) int {
 	for _, n := range kNet.Nodes {
 		if n.Running() == false {
 			// it can be seen as the crashed nodes leave the network
 			n.ResetRoutingTable(routing(n.Id(), kNet.k, kNet.beta))
 			n.Run()
-			kNet.introduceAndConnect(n, NewBasicPeerInfo)
+			kNet.introduceAndConnect(n, peerInfo)
 		}
 	}
 	return kNet.NodeCrash(crashFrom, once)
 }
 
 func (kNet *KadcastNet) Churn(crashFrom int, once bool) int {
-	return kNet.churn(crashFrom, once, routing.NewKadcastTable)
+	return kNet.churn(crashFrom, once, routing.NewKadcastTable, NewBasicPeerInfo)
 }
 
 func (kNet *KadcastNet) Infest(crashFrom int) int {

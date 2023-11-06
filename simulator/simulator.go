@@ -82,7 +82,7 @@ func (s *Simulator) ResetNMsg(nMessage int) {
 }
 
 // Run the packet replacement process until no packet remains in the sorter
-func (s *Simulator) Run(initAllBroadcast, outputPacket bool) {
+func (s *Simulator) Run(initAllBroadcast, outputPacket bool) (crashText string) {
 	if initAllBroadcast {
 		s.initAllBroadcast()
 	} else {
@@ -141,7 +141,9 @@ func (s *Simulator) Run(initAllBroadcast, outputPacket bool) {
 		// churn the network
 		if p.Timestamp()-s.lastCrashAt > int64(s.crashInterval) {
 			s.lastCrashAt = p.Timestamp()
-			fmt.Println("t:", p.Timestamp(), "crashed:", s.net.Churn(1, false))
+			text := fmt.Sprintln("t:", p.Timestamp(), "crashed:", s.net.Churn(1, false))
+			fmt.Print(text)
+			crashText += text
 		}
 		if !initAllBroadcast && p.Timestamp() > int64(s.broadcastID*s.broadcastInterval) && s.broadcastID < s.nMessage {
 			s.initOneBroadcast()
@@ -171,6 +173,7 @@ func (s *Simulator) Run(initAllBroadcast, outputPacket bool) {
 			s.packetOutput.Append(p)
 		}
 	}
+	return
 	//fmt.Printf("%d/%d\n", malicious, total)
 	//fmt.Println("malicious transmission", malitrans)
 	//if outputPacket {

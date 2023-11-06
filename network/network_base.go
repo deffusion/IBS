@@ -217,7 +217,7 @@ func (net *BaseNetwork) NodeCrash(i int, once bool) int {
 }
 
 func (net *BaseNetwork) NodeCrashRandom(i int) int {
-	rd := rand.New(rand.NewSource(time.Now().Unix()))
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	cnt := 0
 	if i < 1 {
 		i = 1
