@@ -2,6 +2,7 @@ package information
 
 import (
 	"github.com/deffusion/IBS/node"
+	"sync"
 )
 
 type BasicPacket struct {
@@ -17,31 +18,41 @@ type BasicPacket struct {
 	redundancy bool
 }
 
+var pool = sync.Pool{
+	New: func() any {
+		return &BasicPacket{}
+	},
+}
+
 func NewBasicPacket(id, dataSize int, origin, from, to, relayer node.Node, timestamp int64) *BasicPacket {
-	return &BasicPacket{
-		Information{
-			&meta{
-				id,
-				timestamp,
-				dataSize,
-				//net,
-				origin,
-			},
-			relayer,
-		},
+	p := pool.Get().(*BasicPacket)
+	p.meta = &meta{
+		id,
 		timestamp,
-		0,
-		0,
-		0,
-		from,
-		to,
-		0,
-		false,
+		dataSize,
+		//net,
+		origin,
 	}
+	p.relayNode = relayer
+	p.timestamp = timestamp
+	p.propagationDelay = 0
+	p.transmissionDelay = 0
+	p.queuingDelaySending = 0
+	p.from = from
+	p.to = to
+	p.hop = 0
+	p.redundancy = false
+	return p
+}
+
+// Reuse : put the packet back to the sync.Pool
+func (p *BasicPacket) Reuse() {
+	pool.Put(p)
 }
 
 func (p *BasicPacket) NextPacket(to node.Node, propagationDelay, transmissionDelay int32, setRelay bool) *BasicPacket {
-	packet := *p
+	packet := pool.Get().(*BasicPacket)
+	packet.Information = p.Information
 	packet.from = p.to // the last receiver is the next sender
 	packet.to = to
 	packet.hop++
@@ -52,7 +63,7 @@ func (p *BasicPacket) NextPacket(to node.Node, propagationDelay, transmissionDel
 	if setRelay {
 		packet.relayNode = to
 	}
-	return &packet
+	return packet
 }
 func (p *BasicPacket) ConfirmPacket() Packet {
 	return NewBasicPacket(p.ID(), 20, p.Origin(), p.To(), p.Origin(), p.Relay(), p.timestamp)

@@ -171,6 +171,8 @@ func (s *Simulator) Run(initAllBroadcast, outputPacket bool) (crashText string) 
 		//p.Print()
 		if outputPacket {
 			s.packetOutput.Append(p)
+		} else {
+			p.Reuse()
 		}
 	}
 	return
