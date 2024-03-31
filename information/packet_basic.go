@@ -53,13 +53,14 @@ func (p *BasicPacket) Reuse() {
 func (p *BasicPacket) NextPacket(to node.Node, propagationDelay, transmissionDelay int32, setRelay bool) *BasicPacket {
 	packet := pool.Get().(*BasicPacket)
 	packet.Information = p.Information
-	packet.from = p.to // the last receiver is the next sender
-	packet.to = to
-	packet.hop++
+	packet.timestamp += int64(propagationDelay + transmissionDelay)
 	packet.propagationDelay = propagationDelay
 	packet.transmissionDelay = transmissionDelay
 	packet.queuingDelaySending = 0
-	packet.timestamp += int64(propagationDelay + transmissionDelay)
+	packet.from = p.to // the last receiver is the next sender
+	packet.to = to
+	packet.hop++
+	packet.redundancy = p.redundancy
 	if setRelay {
 		packet.relayNode = to
 	}
