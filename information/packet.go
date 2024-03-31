@@ -5,14 +5,16 @@ import (
 	"github.com/deffusion/IBS/node"
 )
 
+// meta is the basic information of a packet.
 type meta struct {
-	id        int
-	timestamp int64
-	dataSize  int // Byte
-	//net        *network.BasicNetwork
+	id         int
+	timestamp  int64
+	dataSize   int // in Byte
 	originNode node.Node
 }
 
+// Information is the basic information of a packet.
+// should not be changed after creation.
 type Information struct {
 	*meta
 	relayNode node.Node

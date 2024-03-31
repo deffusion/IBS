@@ -75,6 +75,7 @@ var kadLatency = &cli.Command{
 		}
 		net := InitNet(netSize, k, beta)
 		sim := simulator.New(net, nMessage, netSize, crashInterval, broadcastInterval)
+		sim.InitState()
 		sim.Run(true, false)
 		outputText := sim.Statistic()
 		logFile.Write([]byte(outputText))
@@ -147,6 +148,7 @@ var kadCoverage = &cli.Command{
 			fmt.Println("first crashed: ", cntCrash)
 		}
 		sim := simulator.New(net, nMessage, netSize, crashInterval, broadcastInterval)
+		sim.InitState()
 		sim.Run(false, false)
 		outputText := sim.Statistic()
 		logFile.Write([]byte(configText))
